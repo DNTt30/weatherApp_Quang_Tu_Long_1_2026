@@ -50,6 +50,11 @@ class MyHomePage extends StatelessWidget {
               '2. Lê Minh Quang - Mã SV: 21012086',
               style: TextStyle(fontSize: 18),
             ),
+            SizedBox(height: 15),
+            Text(
+              '3. Ngô Thành Long - Mã SV: 23010032',
+              style: TextStyle(fontSize: 18),
+            ),
           ],
         ),
       ),
