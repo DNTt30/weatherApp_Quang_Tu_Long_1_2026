@@ -1,93 +1,79 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(MyApp());
+// --- 4. Tạo đối tượng (Class) tương ứng với Project ---
+class WeatherData {
+  final String time;
+  final String status;
+  final int temp;
+
+  WeatherData({required this.time, required this.status, required this.temp});
 }
-// Student: Dương Ngọc Tú
-// Assignment: Bài thực hành số 2 - Flutter Variables & Collections
-class MyApp extends StatelessWidget {
 
-  // =========================
-  //  YÊU CẦU 1: SỬ DỤNG BIẾN
-  // =========================
-  String city = "Ha Noi";
-  double temperature = 32.5;
-  String weatherStatus = "Sunny";
-  int humidity = 70;
-  bool isRaining = false;
+void main() {
+  runApp(const MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: WeatherForecast(),
+  ));
+}
 
-  // =========================
-  //  YÊU CẦU 2: COLLECTIONS
-  // =========================
-
-  // List đơn giản
-  List<String> weeklyForecast = [
-    "Monday - Sunny",
-    "Tuesday - Rainy",
-    "Wednesday - Cloudy",
-    "Thursday - Sunny",
-    "Friday - Storm"
-  ];
-
-  // Map
-  Map<String, dynamic> weatherData = {
-    "city": "Ha Noi",
-    "temperature": 32,
-    "humidity": 70,
-    "status": "Sunny"
-  };
-
-  // List<Map> (nâng cao)
-  List<Map<String, dynamic>> forecastList = [
-    {"day": "Mon", "temp": 32},
-    {"day": "Tue", "temp": 28},
-    {"day": "Wed", "temp": 30},
-    {"day": "Thu", "temp": 33},
-    {"day": "Fri", "temp": 29},
-  ];
+class WeatherForecast extends StatelessWidget {
+  const WeatherForecast({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: Text("Weather App")),
+    // --- 1. Sử dụng các biến đơn ---
+    String location = "Hà Nội";
+    String date = "2026-04-15";
 
-        body: Column(
+    // --- 2. Sử dụng Collections (List & Map) ---
+    // Map lưu thông số phụ
+    Map<String, String> details = {
+      "Độ ẩm": "70%",
+      "Gió": "10km/h"
+    };
+
+    // --- 4. Tạo List tương ứng với đối tượng WeatherData ---
+    List<WeatherData> listData = [
+      WeatherData(time: "08:00", status: "Sunny", temp: 28),
+      WeatherData(time: "12:00", status: "Hot", temp: 34),
+      WeatherData(time: "16:00", status: "Cloudy", temp: 30),
+    ];
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Hiển thị biến đơn
+            Text("Khu vực: $location"),
+            Text("Thời điểm: $date"),
+            const SizedBox(height: 20),
 
-            // =========================
-            //  YÊU CẦU 3: HIỂN THỊ BIẾN
-            // =========================
-            Text("City: $city"),
-            Text("Temperature: $temperature°C"),
-            Text("Status: $weatherStatus"),
-            Text("Humidity: $humidity%"),
-            Text("Is Raining: $isRaining"),
-
-            SizedBox(height: 20),
-
-            // =========================
-            //  YÊU CẦU 3: HIỂN THỊ COLLECTION
-            // =========================
-            Text("Weekly Forecast:"),
-
-            Column(
-              children: forecastList.map((item) {
-
-                // =========================
-                // HIỂN THỊ DẠNG ROW (THEO YÊU CẦU)
-                // =========================
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(item["day"]),
-                    Text("${item["temp"]}°C"),
-                  ],
+            // --- 3. Hiển thị dữ liệu từ Collections (List Đối tượng) theo dạng Hàng (Row) ---
+            const Text("Dự báo sắp tới:"),
+            Row(
+              children: listData.map((item) {
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    children: [
+                      Text(item.time),
+                      Text(item.status),
+                      Text("${item.temp}°C"),
+                    ],
+                  ),
                 );
-
               }).toList(),
-            )
+            ),
+
+            const SizedBox(height: 20),
+
+            // Hiển thị dữ liệu từ Map (Sử dụng Text đơn giản)
+            const Text("Chi Tiết:"),
+            Column(
+              children: details.entries.map((e) {
+                return Text("${e.key}: ${e.value}");
+              }).toList(),
+            ),
           ],
         ),
       ),
