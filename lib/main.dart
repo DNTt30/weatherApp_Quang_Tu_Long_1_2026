@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 void main() {
   runApp(MyApp());
 }
-// Student: Dương Ngọc Tú
-// Assignment: Bài thực hành số 2 - Flutter Variables & Collections
+
 class MyApp extends StatelessWidget {
 
   // =========================
-  //  YÊU CẦU 1: SỬ DỤNG BIẾN
+  // ✅ YÊU CẦU 1: BIẾN
   // =========================
   String city = "Ha Noi";
   double temperature = 32.5;
@@ -17,7 +16,7 @@ class MyApp extends StatelessWidget {
   bool isRaining = false;
 
   // =========================
-  //  YÊU CẦU 2: COLLECTIONS
+  // ✅ YÊU CẦU 2: COLLECTIONS
   // =========================
 
   // List đơn giản
@@ -25,8 +24,6 @@ class MyApp extends StatelessWidget {
     "Monday - Sunny",
     "Tuesday - Rainy",
     "Wednesday - Cloudy",
-    "Thursday - Sunny",
-    "Friday - Storm"
   ];
 
   // Map
@@ -37,13 +34,21 @@ class MyApp extends StatelessWidget {
     "status": "Sunny"
   };
 
-  // List<Map> (nâng cao)
+  // =========================
+  // ✅ YÊU CẦU 4: LIST OBJECT
+  // =========================
+  // Đối tượng Weather Location (id, name)
+  List<Map<String, dynamic>> listCity = [
+    {'id': 1, 'name': 'Ha Noi'},
+    {'id': 2, 'name': 'Da Nang'},
+    {'id': 3, 'name': 'Ho Chi Minh'},
+  ];
+
+  // Forecast nâng cao
   List<Map<String, dynamic>> forecastList = [
     {"day": "Mon", "temp": 32},
     {"day": "Tue", "temp": 28},
     {"day": "Wed", "temp": 30},
-    {"day": "Thu", "temp": 33},
-    {"day": "Fri", "temp": 29},
   ];
 
   @override
@@ -57,7 +62,7 @@ class MyApp extends StatelessWidget {
           children: [
 
             // =========================
-            //  YÊU CẦU 3: HIỂN THỊ BIẾN
+            // ✅ YÊU CẦU 3: HIỂN THỊ BIẾN
             // =========================
             Text("City: $city"),
             Text("Temperature: $temperature°C"),
@@ -68,16 +73,12 @@ class MyApp extends StatelessWidget {
             SizedBox(height: 20),
 
             // =========================
-            //  YÊU CẦU 3: HIỂN THỊ COLLECTION
+            // ✅ HIỂN THỊ COLLECTION
             // =========================
-            Text("Weekly Forecast:"),
+            Text("Forecast:"),
 
             Column(
               children: forecastList.map((item) {
-
-                // =========================
-                // HIỂN THỊ DẠNG ROW (THEO YÊU CẦU)
-                // =========================
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -85,9 +86,27 @@ class MyApp extends StatelessWidget {
                     Text("${item["temp"]}°C"),
                   ],
                 );
-
               }).toList(),
-            )
+            ),
+
+            SizedBox(height: 20),
+
+            // =========================
+            // ✅ YÊU CẦU 4: HIỂN THỊ LIST OBJECT
+            // =========================
+            Text("City List:"),
+
+            Column(
+              children: listCity.map((item) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("ID: ${item["id"]}"),
+                    Text(item["name"]),
+                  ],
+                );
+              }).toList(),
+            ),
           ],
         ),
       ),
