@@ -52,12 +52,13 @@ class _MyHomePageState extends State<MyHomePage> {
     };
 
     // YÊU CẦU 2: Collections - List<Map> (Forecast List)
+    // DỮ LIỆU MỚI: Khớp với các biến của model Forecast
     List<Map<String, dynamic>> forecastList = [
-      {"day": "Mon", "temp": 32},
-      {"day": "Tue", "temp": 28},
-      {"day": "Wed", "temp": 30},
-      {"day": "Thu", "temp": 29},
-      {"day": "Fri", "temp": 31},
+      {"id": "f1", "dateTime": "Mon", "minTemp": 25.0, "maxTemp": 32.0, "rainProb": 10},
+      {"id": "f2", "dateTime": "Tue", "minTemp": 24.0, "maxTemp": 28.0, "rainProb": 80},
+      {"id": "f3", "dateTime": "Wed", "minTemp": 25.0, "maxTemp": 30.0, "rainProb": 30},
+      {"id": "f4", "dateTime": "Thu", "minTemp": 23.0, "maxTemp": 29.0, "rainProb": 10},
+      {"id": "f5", "dateTime": "Fri", "minTemp": 26.0, "maxTemp": 31.0, "rainProb": 50},
     ];
 
     // YÊU CẦU 4: List<Map> - Danh sách thành phố (id, name)
@@ -203,7 +204,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  // Widget hiển thị dự báo chi tiết
+  // Widget hiển thị dự báo chi tiết (Đã sửa lỗi)
   Widget _buildDetailedForecast(List<Map<String, dynamic>> forecastList) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -220,10 +221,16 @@ class _MyHomePageState extends State<MyHomePage> {
               forecastList.length,
               (index) {
                 Map<String, dynamic> forecast = forecastList[index];
+
+                // TRUYỀN BIẾN MỚI: Khớp hoàn toàn với Constructor của Forecast.dart
                 Forecast forecastObj = Forecast(
-                  day: forecast['day'],
-                  temp: forecast['temp'].toDouble(),
+                  id: forecast['id'],
+                  dateTime: forecast['dateTime'],
+                  minTemp: forecast['minTemp'].toDouble(),
+                  maxTemp: forecast['maxTemp'].toDouble(),
+                  rainProbability: forecast['rainProb'],
                 );
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8.0),
                   padding: const EdgeInsets.all(12.0),
@@ -234,10 +241,18 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(forecastObj.getForecast()),
+                      // IN DỮ LIỆU MỚI THAY VÌ DÙNG getForecast()
                       Text(
-                        "Sunny",
-                        style: TextStyle(color: Colors.grey.shade600),
+                        '${forecastObj.dateTime}:  ${forecastObj.minTemp}°C - ${forecastObj.maxTemp}°C',
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      Text(
+                        "Mưa: ${forecastObj.rainProbability}%",
+                        style: TextStyle(
+                            color: forecastObj.rainProbability > 50
+                                ? Colors.blue
+                                : Colors.grey.shade600,
+                            fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
