@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/city.dart';
 import '../models/weather.dart';
-import '../models/forecast.dart';
+import '../models/Forecast.dart';
 import '../widgets/app_drawer.dart';
 
 // Widget trang chủ với Stateful
