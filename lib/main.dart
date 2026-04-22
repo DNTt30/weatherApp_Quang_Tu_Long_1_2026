@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
-
-// --- 4. Tạo đối tượng (Class) tương ứng với Project ---
-class WeatherData {
-  final String time;
-  final String status;
-  final int temp;
-
-  WeatherData({required this.time, required this.status, required this.temp});
-}
+import 'working.dart';
+import 'listCity.dart';
 
 void main() {
   runApp(const MaterialApp(
@@ -21,58 +14,57 @@ class WeatherForecast extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- 1. Sử dụng các biến đơn ---
-    String location = "Hà Nội";
-    String date = "2026-04-15";
+    // Khởi tạo trình quản lý dữ liệu (Câu 4)
+    final manager = ListCityData();
+    manager.initMockData(); // Tạo dữ liệu mẫu
+    
+    // Read: Lấy danh sách để hiển thị (Câu 4)
+    List<CityData> listData = manager.readAll();
 
-    // --- 2. Sử dụng Collections (List & Map) ---
-    // Map lưu thông số phụ
-    Map<String, String> details = {
-      "Độ ẩm": "70%",
-      "Gió": "10km/h"
-    };
-
-    // --- 4. Tạo List tương ứng với đối tượng WeatherData ---
-    List<WeatherData> listData = [
-      WeatherData(time: "08:00", status: "Sunny", temp: 28),
-      WeatherData(time: "12:00", status: "Hot", temp: 34),
-      WeatherData(time: "16:00", status: "Cloudy", temp: 30),
-    ];
     return Scaffold(
+      appBar: AppBar(title: const Text("Dự báo thời tiết")),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hiển thị biến đơn
-            Text("Khu vực: $location"),
-            Text("Thời điểm: $date"),
-            const SizedBox(height: 20),
-
-            // --- 3. Hiển thị dữ liệu từ Collections (List Đối tượng) theo dạng Hàng (Row) ---
-            const Text("Dự báo sắp tới:"),
-            Row(
-              children: listData.map((item) {
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    children: [
-                      Text(item.time),
-                      Text(item.status),
-                      Text("${item.temp}°C"),
-                    ],
-                  ),
-                );
-              }).toList(),
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text("Danh sách thành phố:", 
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+            
+            // Sử dụng ListView.builder để tối ưu hiệu năng hiển thị (Chương 3)
+            Expanded(
+              child: ListView.builder(
+                itemCount: listData.length,
+                itemBuilder: (context, index) {
+                  final item = listData[index];
+                  return ListTile(
+                    leading: const Icon(Icons.location_city, color: Colors.blue),
+                    title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text("Tọa độ: ${item.latitude}, ${item.longitude}"),
+                    trailing: Icon(
+                      item.isFavourite ? Icons.favorite : Icons.favorite_border,
+                      color: item.isFavourite ? Colors.red : null,
+                    ),
+                    onTap: () => item.displayLocation(), // Gọi phương thức hoạt động (Câu 3)
+                  );
+                },
+              ),
             ),
 
-            const SizedBox(height: 20),
-
-            // Hiển thị dữ liệu từ Map (Sử dụng Text đơn giản)
-            const Text("Chi Tiết:"),
-            Column(
-              children: details.entries.map((e) {
-                return Text("${e.key}: ${e.value}");
-              }).toList(),
+            const Divider(),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text("Thông tin ứng dụng:", style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            // Hiển thị Map dữ liệu từ file working.dart
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+              //  children: details.entries.map((e) => Text("${e.key}: ${e.value}")).toList(),
+              ),
             ),
           ],
         ),

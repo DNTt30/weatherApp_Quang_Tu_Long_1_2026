@@ -1,17 +1,4 @@
-# weather_app
-
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+feat(Long): Hoan thanh Bai tap lon - Doi tuong CityData va CRUD ListCityData
+[Cau 3] Xay dung class CityData voi 5 bien (id, name, latitude, longitude, isFavorite) va 2 phuong thuc (toggleFavorite, displayMapCoordinates).
+[Cau 4] Xay dung class ListCityData voi CRUD day du: createCity, readAllCities, editCityFavoriteStatus.
+[Cau 5] Cap nhat README.md: mo ta chi tiet thuoc tinh CityData va logic quan ly danh sach yeu thich.
