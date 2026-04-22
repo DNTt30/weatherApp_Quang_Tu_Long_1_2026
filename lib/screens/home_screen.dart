@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../models/city.dart';
-import '../models/weather.dart';
 import '../models/forecast.dart';
+import '../models/weather.dart';
 import '../widgets/app_drawer.dart';
 
 // Widget trang chủ với Stateful
@@ -14,21 +15,25 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   // YÊU CẦU 1: Khai báo biến (String, int, double, bool)
-  late String city;
+  late String id;
   late double temperature;
+  late int humidity;
+  late double windSpeed;
   late String weatherStatus;
-  late double humidity;
-  late bool isRaining;
+  late double uvIndex;
+  late String icon;
 
   @override
   void initState() {
     super.initState();
     // Khởi tạo giá trị biến
-    city = "Ha Noi";
+    id = "w1";
     temperature = 32.5;
+    humidity = 70;
+    windSpeed = 12.0;
     weatherStatus = "Sunny";
-    humidity = 70.0;
-    isRaining = false;
+    uvIndex = 8.5;
+    icon = "01d";
   }
 
   @override
@@ -44,11 +49,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // YÊU CẦU 2: Collections - Map
     Map<String, dynamic> weatherData = {
-      "city": city,
+      "id": id,
       "temperature": temperature,
       "humidity": humidity,
       "status": weatherStatus,
-      "isRaining": isRaining,
+      "windSpeed": windSpeed,
+      "uvIndex": uvIndex,
     };
 
     // YÊU CẦU 2: Collections - List<Map> (Forecast List)
@@ -71,18 +77,17 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // Tạo đối tượng Weather
     Weather currentWeather = Weather(
-      city: city,
+      id: id,
       temperature: temperature,
-      status: weatherStatus,
       humidity: humidity,
-      isRaining: isRaining,
+      windSpeed: windSpeed,
+      status: weatherStatus,
+      uvIndex: uvIndex,
+      icon: icon,
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Weather App"),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text("Weather App"), elevation: 0),
       drawer: const AppDrawer(),
       body: SingleChildScrollView(
         child: Column(
@@ -122,7 +127,7 @@ class _MyHomePageState extends State<MyHomePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "City: $city",
+            "ID: ${currentWeather.id}",
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -130,7 +135,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           Text(
-            "Temperature: ${temperature.toStringAsFixed(1)}°C",
+            "Temperature: ${currentWeather.formatTemperature()}",
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -138,23 +143,24 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           Text(
-            "Status: $weatherStatus",
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-            ),
+            "Status: ${currentWeather.status}",
+            style: const TextStyle(fontSize: 16, color: Colors.white),
           ),
           Text(
-            "Humidity: ${humidity.toStringAsFixed(0)}%",
+            "Humidity: ${currentWeather.humidity}%",
             style: const TextStyle(fontSize: 14, color: Colors.white),
           ),
           Text(
-            "Is Raining: $isRaining",
+            "Wind Speed: ${currentWeather.windSpeed} km/h",
+            style: const TextStyle(fontSize: 14, color: Colors.white),
+          ),
+          Text(
+            "UV Index: ${currentWeather.uvIndex}",
             style: const TextStyle(fontSize: 14, color: Colors.white),
           ),
           const SizedBox(height: 12),
           Text(
-            currentWeather.getWeatherInfo(),
+            currentWeather.evaluateDangerLevel(),
             style: const TextStyle(
               fontSize: 12,
               color: Colors.white70,
@@ -216,34 +222,31 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           const SizedBox(height: 12),
           Column(
-            children: List.generate(
-              forecastList.length,
-              (index) {
-                Map<String, dynamic> forecast = forecastList[index];
-                Forecast forecastObj = Forecast(
-                  day: forecast['day'],
-                  temp: forecast['temp'].toDouble(),
-                );
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8.0),
-                  padding: const EdgeInsets.all(12.0),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(forecastObj.getForecast()),
-                      Text(
-                        "Sunny",
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+            children: List.generate(forecastList.length, (index) {
+              Map<String, dynamic> forecast = forecastList[index];
+              Forecast forecastObj = Forecast(
+                day: forecast['day'],
+                temp: forecast['temp'].toDouble(),
+              );
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8.0),
+                padding: const EdgeInsets.all(12.0),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(forecastObj.getForecast()),
+                    Text(
+                      "Sunny",
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ),
         ],
       ),
@@ -265,43 +268,39 @@ class _MyHomePageState extends State<MyHomePage> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: List.generate(
-                listCity.length,
-                (index) {
-                  Map<String, dynamic> cityData = listCity[index];
-                  City cityObj =
-                      City(id: cityData['id'], name: cityData['name']);
-                  return Container(
-                    margin: const EdgeInsets.only(right: 12.0),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 12.0,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          cityObj.name,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
+              children: List.generate(listCity.length, (index) {
+                Map<String, dynamic> cityData = listCity[index];
+                City cityObj = City(id: cityData['id'], name: cityData['name']);
+                return Container(
+                  margin: const EdgeInsets.only(right: 12.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 12.0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        cityObj.name,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
-                        Text(
-                          "ID: ${cityObj.id}",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
+                      ),
+                      Text(
+                        "ID: ${cityObj.id}",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
                         ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
             ),
           ),
         ],
