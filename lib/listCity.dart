@@ -26,8 +26,8 @@ class ListCityData {
   
   // Khởi tạo dữ liệu mẫu để hiển thị
   void initMockData() {
-    create(CityData(id: "1", name: "Hà Nội", latitude: 21.0285, longitude: 105.8542, isFavourite: true));
+    create(CityData(id: "1", name: "Hà Nội", latitude: 21.0285, longitude: 105.8542, isFavourite: false));
     create(CityData(id: "2", name: "Hồ Chí Minh", latitude: 10.7626, longitude: 106.6602, isFavourite: false));
-    create(CityData(id: "3", name: "Đà Nẵng", latitude: 16.0544, longitude: 108.2022, isFavourite: true));
+    create(CityData(id: "3", name: "Đà Nẵng", latitude: 16.0544, longitude: 108.2022, isFavourite: false));
   }
 }
