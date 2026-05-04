@@ -1,7 +1,9 @@
-feat(Long): Hoan thanh Bai tap lon - Doi tuong CityData va CRUD ListCityData  
+feat(Long):
 
-[Cau 3] Xay dung class CityData voi 5 bien (id, name, latitude, longitude, isFavorite) va 2 phuong thuc (toggleFavorite, displayMapCoordinates).  
 
-[Cau 4] Xay dung class ListCityData voi CRUD day du: createCity, readAllCities, editCityFavoriteStatus.
 
-[Cau 5] Cap nhat README.md: mo ta chi tiet thuoc tinh CityData va logic quan ly danh sach yeu thich.  
+[Update] Them giao dien nhiem vu:
+- `lib/screen.dart`: chua layout chinh voi BottomNavigationBar gom 3 tab Home, Forecast, More.
+- `lib/forecast.dart`: hien thi thong tin du bao, bao gom Nhiet do hom nay, Nhiet do tung gio va Nhiet do hang ngay.
+- `lib/more.dart`: chua cac tuy chon setting, bao gom bat/tat thong bao, chon vi tri mac dinh, doi theme sang/toi va thong tin phien ban.
+- `lib/main.dart`: da chuyen app sang su dung `Screen` lam man hinh chinh.  

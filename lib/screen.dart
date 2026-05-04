@@ -56,10 +56,20 @@ class _ScreenState extends State<Screen> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Ngô Thành Long - 23010032',
+                  'Long - 23010032',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
+                Text(
+                  'Dương Ngọc Tú - 22010052',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                Text(
+                  "Lê Minh Quang - 21012086",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                )
               ],
             ),
           ),
