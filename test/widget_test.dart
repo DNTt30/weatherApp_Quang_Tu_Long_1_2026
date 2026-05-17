@@ -13,11 +13,11 @@ import 'package:weather_app/main.dart';
 void main() {
   testWidgets('Weather App displays correctly', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp());
 
-    // Verify that the app renders and displays Weather App title
-    expect(find.text('Weather App'), findsWidgets);
-    expect(find.text('Ha Noi'), findsOneWidget);
+    // Verify that the app renders and displays Home title
+    expect(find.text('Home'), findsWidgets);
+    expect(find.text('Hà Nội'), findsWidgets);
 
     // Verify that AppBar is displayed
     expect(find.byType(AppBar), findsOneWidget);

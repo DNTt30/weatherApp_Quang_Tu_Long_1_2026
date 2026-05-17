@@ -146,6 +146,11 @@ class _AboutScreenState extends State<AboutScreen> {
                             'https://images.unsplash.com/photo-1555099962-4199c345e5dd?q=80&w=600&auto=format&fit=crop',
                             fit: BoxFit.cover,
                             height: 450,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: Colors.grey.shade300,
+                              height: 450,
+                              child: const Icon(Icons.broken_image, color: Colors.grey),
+                            ),
                           ),
                         ),
                       ),
@@ -163,6 +168,11 @@ class _AboutScreenState extends State<AboutScreen> {
                                 'https://images.unsplash.com/photo-1534088568595-a066f410cbda?q=80&w=600&auto=format&fit=crop',
                                 fit: BoxFit.cover,
                                 height: 280,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  color: Colors.grey.shade300,
+                                  height: 280,
+                                  child: const Icon(Icons.broken_image, color: Colors.grey),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 12),

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "134564869693",
+    "project_id": "weather-app-duongtu-2026",
+    "storage_bucket": "weather-app-duongtu-2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:134564869693:android:8512195d9e5b9b8e5b1c54",
+        "android_client_info": {
+          "package_name": "com.example.weather_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZxXz8B9mYWmTseEh9tXtxfn4oQ4U5q4E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

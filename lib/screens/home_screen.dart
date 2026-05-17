@@ -4,6 +4,7 @@ import '../models/city.dart';
 import '../models/weather.dart';
 import '../models/forecast.dart';
 import '../widgets/shared_widgets.dart';
+import '../service/firestore_service.dart';
 
 // ============================================================
 // HomeScreen — Màn hình chính (Long's screen)
@@ -17,6 +18,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final FirestoreService firestoreService = FirestoreService();
+
   // YÊU CẦU 1: Biến String, double, bool
   late String city;
   late double temperature;
@@ -120,7 +123,35 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 16),
                 // Chi tiết thời tiết
                 _buildWeatherDetails(currentWeather),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1565C0),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 4,
+                      ),
+                      onPressed: () {
+                        firestoreService.addCity();
+                      },
+                      icon: const Icon(Icons.add_location_alt_rounded),
+                      label: Text(
+                        "Add City",
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
