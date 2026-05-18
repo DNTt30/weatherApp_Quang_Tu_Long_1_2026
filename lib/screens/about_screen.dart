@@ -1,290 +1,414 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../widgets/shared_widgets.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // ============================================================
-// AboutScreen — Màn hình About / Profile (Tú's screen)
-// Theo mockup Figma: fbjspFedt90T1p34Ty2xPI node-id=4368-321106
-// Layout: Dark blue header → Avatar overlap → Tên/MSSV → Settings rows
+// AboutScreen — Tú phụ trách (Cài đặt, Thông tin, Đăng xuất)
+// Purple Glassmorphism Theme 
 // ============================================================
-class AboutScreen extends StatefulWidget {
+class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   @override
-  State<AboutScreen> createState() => _AboutScreenState();
-}
-
-class _AboutScreenState extends State<AboutScreen> {
-  @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // ─── HEADER ảnh nhóm (Giữ nguyên theo Framework nhóm) ───
-        const GroupPhotoHeader(screenLabel: 'Tú_About'),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF2E335A), Color(0xFF1C1B33)],
+        ),
+      ),
+      child: Column(
+        children: [
+          // ── Header ──────────────────────────────────────
+          _buildHeader(),
 
-        Expanded(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+          // ── Content ─────────────────────────────────────
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. Top Navigation Row (Dựa trên World Peas Navbar)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Weather App',
-                        style: GoogleFonts.lora(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1565C0), // Chuyển sang xanh Blue của app thời tiết
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          reverse: true,
-                          child: Row(
-                            children: [
-                              _buildNavLink('Home'),
-                              _buildNavLink('Forecast'),
-                              _buildNavLink('About Me'),
-                              _buildNavLink('Team'),
-                              const SizedBox(width: 16),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF1565C0),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  'App v1.0',
-                                  style: GoogleFonts.inter(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 80),
+                  _buildAppInfoCard(),
+                  const SizedBox(height: 24),
+                  
+                  _sectionLabel('Thành Viên Nhóm 1'),
+                  const SizedBox(height: 12),
+                  _buildTeamList(),
+                  const SizedBox(height: 24),
 
-                  // 2. Hero Text (Dựa trên "We're farmers...")
-                  Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 800),
-                      child: RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                          style: GoogleFonts.lora(
-                            fontSize: 46,
-                            color: Colors.black87,
-                            height: 1.2,
-                          ),
-                          children: [
-                            const TextSpan(text: "I am "),
-                            TextSpan(
-                              text: "Dương Ngọc Tú",
-                              style: GoogleFonts.lora(
-                                  fontStyle: FontStyle.italic,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            const TextSpan(text: ", a "),
-                            TextSpan(
-                              text: "developer",
-                              style: GoogleFonts.lora(fontStyle: FontStyle.italic),
-                            ),
-                            const TextSpan(text: " of\nthis amazing weather app."),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 40),
+                  _sectionLabel('Công Nghệ Sử Dụng'),
+                  const SizedBox(height: 12),
+                  _buildTechStack(),
+                  const SizedBox(height: 30),
 
-                  // 3. Button
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1565C0),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'View Github Repo',
-                        style: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 80),
-
-                  // 4. Images Row (Ảnh cá nhân/coding thay vì rau củ)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 1,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          // Ảnh mô tả lập trình/thời tiết
-                          child: Image.network(
-                            'https://images.unsplash.com/photo-1555099962-4199c345e5dd?q=80&w=600&auto=format&fit=crop',
-                            fit: BoxFit.cover,
-                            height: 450,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              color: Colors.grey.shade300,
-                              height: 450,
-                              child: const Icon(Icons.broken_image, color: Colors.grey),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 30),
-                      Expanded(
-                        flex: 1,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 100), // Push image down
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              // Ảnh mô tả thời tiết
-                              child: Image.network(
-                                'https://images.unsplash.com/photo-1534088568595-a066f410cbda?q=80&w=600&auto=format&fit=crop',
-                                fit: BoxFit.cover,
-                                height: 280,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  color: Colors.grey.shade300,
-                                  height: 280,
-                                  child: const Icon(Icons.broken_image, color: Colors.grey),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            RichText(
-                              text: TextSpan(
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: Colors.black87,
-                                  height: 1.5,
-                                ),
-                                children: [
-                                  TextSpan(
-                                    text: 'Phenikaa University — ',
-                                    style: GoogleFonts.inter(
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  const TextSpan(
-                                    text:
-                                        'The developer who built this screen is currently studying Software Engineering at Phenikaa University, Class SE06.2, Cohort 2022.',
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 100),
-
-                  // 5. WHAT WE BELIEVE Section -> WHO I AM Section
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 1,
-                        child: Text(
-                          'WHO I AM',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Hello! I am Dương Ngọc Tú. MSSV: 22010052.',
-                              style: GoogleFonts.inter(
-                                  fontSize: 15,
-                                  color: Colors.black87,
-                                  height: 1.6,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 20),
-                            Text(
-                              'I am passionate about mobile development and creating beautiful, responsive user interfaces. This screen represents the culmination of our UI/UX design studies, translating complex Figma mockups into functional Flutter code.',
-                              style: GoogleFonts.inter(
-                                  fontSize: 15,
-                                  color: Colors.black87,
-                                  height: 1.6),
-                            ),
-                            const SizedBox(height: 20),
-                            Text(
-                              'My Role in the Team:',
-                              style: GoogleFonts.inter(
-                                  fontSize: 15,
-                                  color: Colors.black87,
-                                  height: 1.6,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 20),
-                            Text(
-                              'In this Weather App project (Group 1), I took on the responsibility of managing the project repository, structuring the README.md documentation, and developing this comprehensive About screen. By utilizing modern Flutter widgets like Stack, ConstrainedBox, and RichText, I was able to faithfully recreate the structural requirements while infusing it with our project\'s identity.',
-                              style: GoogleFonts.inter(
-                                  fontSize: 15,
-                                  color: Colors.black87,
-                                  height: 1.6),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 60),
+                  _buildSettingsAndLogout(context),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
           ),
-        ),
 
-        // ─── FOOTER thành viên (Giữ nguyên theo Framework nhóm) ───
-        const MemberInfoFooter(),
+          // ── Footer ──────────────────────────────────────
+          _buildFooter(),
+        ],
+      ),
+    );
+  }
+
+  // ── Header ────────────────────────────────────────────────
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      height: 100,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF3658B1), Color(0xFFC159EC)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+              color: const Color(0xFF3658B1).withValues(alpha: 0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4))
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+              right: -20,
+              top: -20,
+              child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.05)))),
+          Center(
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.settings_rounded,
+                        color: Colors.white54, size: 18),
+                    const SizedBox(width: 8),
+                    Text('Mở rộng (More)',
+                        style: GoogleFonts.poppins(
+                            color: Colors.white70,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500)),
+                  ]),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text('Tú_More',
+                        style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                ]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── App Info Card ─────────────────────────────────────────
+  Widget _buildAppInfoCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF5936B4), Color(0xFF362A84)],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+        boxShadow: [
+          BoxShadow(
+              color: const Color(0xFF48319D).withValues(alpha: 0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 6))
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.1),
+            ),
+            child: const Icon(Icons.cloud_done_rounded,
+                size: 48, color: Color(0xFFFFD700)),
+          ),
+          const SizedBox(height: 16),
+          Text('Weather App',
+              style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text('Phiên bản 1.0.0',
+              style: GoogleFonts.poppins(
+                  color: const Color(0xFFE0D9FF), fontSize: 13)),
+          const SizedBox(height: 16),
+          Text(
+            'Ứng dụng theo dõi thời tiết chính xác, nhanh chóng được xây dựng bởi Nhóm 1 - Đại học Phenikaa.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Team List ─────────────────────────────────────────────
+  Widget _buildTeamList() {
+    final teamMembers = [
+      {
+        'name': 'Dương Ngọc Tú',
+        'id': '22010052',
+        'role': 'Auth, Settings, Firebase',
+        'icon': Icons.admin_panel_settings_rounded,
+        'color': const Color(0xFFC427FB)
+      },
+      {
+        'name': 'Ngô Thành Long',
+        'id': '23010032',
+        'role': 'Home, City UI',
+        'icon': Icons.home_rounded,
+        'color': const Color(0xFFFFD700)
+      },
+      {
+        'name': 'Lê Minh Quang',
+        'id': '21012086',
+        'role': 'Forecast, Weather Detail',
+        'icon': Icons.bar_chart_rounded,
+        'color': const Color(0xFF83B4FF)
+      },
+    ];
+
+    return Column(
+      children: teamMembers.map((member) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: (member['color'] as Color).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(member['icon'] as IconData,
+                    color: member['color'] as Color, size: 20),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(member['name'] as String,
+                        style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 2),
+                    Text(member['role'] as String,
+                        style: GoogleFonts.poppins(
+                            color: Colors.white54, fontSize: 11)),
+                  ],
+                ),
+              ),
+              Text(member['id'] as String,
+                  style: GoogleFonts.poppins(
+                      color: const Color(0xFFE0D9FF),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // ── Tech Stack ────────────────────────────────────────────
+  Widget _buildTechStack() {
+    final techList = [
+      {'label': 'Flutter', 'icon': Icons.flutter_dash_rounded, 'color': Colors.blue},
+      {'label': 'Firebase', 'icon': Icons.local_fire_department_rounded, 'color': Colors.orange},
+      {'label': 'Dart', 'icon': Icons.code_rounded, 'color': Colors.teal},
+      {'label': 'Figma', 'icon': Icons.design_services_rounded, 'color': Colors.pink},
+    ];
+
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 2.5,
+      children: techList.map((t) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          child: Row(
+            children: [
+              Icon(t['icon'] as IconData,
+                  color: (t['color'] as Color).withValues(alpha: 0.8), size: 20),
+              const SizedBox(width: 10),
+              Text(t['label'] as String,
+                  style: GoogleFonts.poppins(
+                      color: Colors.white70,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500)),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // ── Settings & Logout ─────────────────────────────────────
+  Widget _buildSettingsAndLogout(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionLabel('Cài Đặt'),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: Column(
+            children: [
+              _buildSettingTile(Icons.language_rounded, 'Đổi ngôn ngữ', 'Tiếng Việt'),
+              Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+              _buildSettingTile(Icons.dark_mode_rounded, 'Giao diện', 'Tối (Dark)'),
+              Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+              _buildSettingTile(Icons.thermostat_rounded, 'Đơn vị nhiệt độ', '°C'),
+              Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+              
+              // Nút Đăng Xuất
+              InkWell(
+                onTap: () async {
+                  await FirebaseAuth.instance.signOut();
+                  // Tự động chuyển về trang đăng nhập nhờ StreamBuilder trong main.dart
+                },
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.logout_rounded,
+                            size: 18, color: Colors.redAccent),
+                      ),
+                      const SizedBox(width: 14),
+                      Text('Đăng Xuất',
+                          style: GoogleFonts.poppins(
+                              color: Colors.redAccent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildNavLink(String text) {
+  Widget _buildSettingTile(IconData icon, String title, String trailing) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Text(
-        text,
-        style: GoogleFonts.inter(
-          fontSize: 14,
-          color: Colors.black87,
-        ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF48319D).withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: const Color(0xFFE0D9FF)),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(title,
+                style: GoogleFonts.poppins(
+                    color: Colors.white, fontSize: 13)),
+          ),
+          Text(trailing,
+              style: GoogleFonts.poppins(
+                  color: Colors.white54, fontSize: 12)),
+          const SizedBox(width: 6),
+          const Icon(Icons.chevron_right_rounded,
+              color: Colors.white38, size: 18),
+        ],
       ),
     );
   }
+
+  // ── Footer ────────────────────────────────────────────────
+  Widget _buildFooter() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1F1D47).withValues(alpha: 0.95),
+        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Row(children: [
+          const Icon(Icons.school_rounded, size: 12, color: Color(0xFFE0D9FF)),
+          const SizedBox(width: 6),
+          Text('Phenikaa University',
+              style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: const Color(0xFFE0D9FF),
+                  fontWeight: FontWeight.w600)),
+        ]),
+        const SizedBox(height: 3),
+        Text('Dương Ngọc Tú • Ngô Thành Long • Lê Minh Quang',
+            style: GoogleFonts.poppins(fontSize: 9, color: Colors.white38)),
+      ]),
+    );
+  }
+
+  Widget _sectionLabel(String text) => Text(text,
+      style: GoogleFonts.poppins(
+          color: const Color(0xFFE0D9FF),
+          fontSize: 14,
+          fontWeight: FontWeight.w700));
 }

@@ -17,14 +17,99 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
 
+  // Tài khoản demo mẫu
+  static const String _demoEmail = 'demo@phenikaa.edu.vn';
+  static const String _demoPassword = '123456';
+  static const String _demoUsername = 'Phenikaa Demo';
+
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _isDemoLoading = false;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // ── Tự động tạo + đăng nhập tài khoản demo ─────────────
+  Future<void> _useDemoAccount() async {
+    setState(() => _isDemoLoading = true);
+    try {
+      _emailController.text = _demoEmail;
+      _passwordController.text = _demoPassword;
+
+      try {
+        await _authService.signIn(_demoEmail, _demoPassword);
+      } on FirebaseAuthException catch (e) {
+        // Firebase mới trả nhiều code khác nhau — bắt tất cả
+        final codesNotFound = [
+          'user-not-found',
+          'invalid-credential',
+          'INVALID_LOGIN_CREDENTIALS',
+          'invalid-login-credentials',
+          'wrong-password', // dùng sai pass lần đầu — tài khoản chưa có
+        ];
+        if (codesNotFound.contains(e.code)) {
+          // Tài khoản chưa tồn tại → đăng ký mới rồi đăng nhập
+          try {
+            await _authService.signUp(_demoEmail, _demoUsername, _demoPassword);
+          } on FirebaseAuthException catch (signUpErr) {
+            // Nếu email đã tồn tại nhưng pass sai → bỏ qua, thử lại sign in
+            if (signUpErr.code != 'email-already-in-use') rethrow;
+          }
+          await _authService.signIn(_demoEmail, _demoPassword);
+        } else {
+          rethrow;
+        }
+      }
+
+      // Không cần Navigator — StreamBuilder trong main.dart tự redirect
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(children: [
+              const Icon(Icons.verified_user_rounded, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Đăng nhập demo thành công!',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                ),
+              ),
+            ]),
+            backgroundColor: const Color(0xFF1565C0),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi Firebase (${e.code}): ${e.message}'),
+            backgroundColor: const Color(0xFFC62828),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi demo: ${e.toString()}'),
+            backgroundColor: const Color(0xFFC62828),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isDemoLoading = false);
+    }
   }
 
   Future<void> _handleLogin() async {
@@ -35,11 +120,34 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await _authService.signIn(
-        _emailController.text,
-        _passwordController.text,
-      );
+      // Thử đăng nhập — nếu tài khoản chưa tồn tại thì tự tạo (chỉ cho demo)
+      try {
+        await _authService.signIn(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+        );
+      } on FirebaseAuthException catch (innerErr) {
+        final notFoundCodes = [
+          'user-not-found',
+          'invalid-credential',
+          'INVALID_LOGIN_CREDENTIALS',
+          'invalid-login-credentials',
+        ];
+        // Nếu là tài khoản demo và chưa có → tự tạo rồi đăng nhập
+        if (notFoundCodes.contains(innerErr.code) &&
+            _emailController.text.trim() == _demoEmail) {
+          try {
+            await _authService.signUp(_demoEmail, _demoUsername, _demoPassword);
+          } on FirebaseAuthException catch (su) {
+            if (su.code != 'email-already-in-use') rethrow;
+          }
+          await _authService.signIn(_demoEmail, _demoPassword);
+        } else {
+          rethrow;
+        }
+      }
 
+      // Không cần Navigator — StreamBuilder trong main.dart tự redirect
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -63,20 +171,18 @@ class _LoginScreenState extends State<LoginScreen> {
             duration: const Duration(seconds: 2),
           ),
         );
-        
-        // Navigate to the MainShell and remove all prior screens in stack
-        Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
       }
     } on FirebaseAuthException catch (e) {
-      String errorMessage = 'Đã xảy ra lỗi. Vui lòng thử lại!';
-      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+      String errorMessage = 'Đã xảy ra lỗi. Vui lòng thử lại! (${e.code})';
+      if (e.code == 'user-not-found' || e.code == 'wrong-password' ||
+          e.code == 'invalid-credential' || e.code == 'INVALID_LOGIN_CREDENTIALS') {
         errorMessage = 'Email hoặc mật khẩu không chính xác.';
       } else if (e.code == 'invalid-email') {
         errorMessage = 'Địa chỉ email không hợp lệ.';
       } else if (e.code == 'user-disabled') {
         errorMessage = 'Tài khoản này đã bị vô hiệu hóa.';
       } else if (e.code == 'too-many-requests') {
-        errorMessage = 'Quá nhiều yêu cầu đăng nhập sai liên tiếp. Vui lòng thử lại sau.';
+        errorMessage = 'Quá nhiều yêu cầu. Thử lại sau.';
       }
 
       if (mounted) {
@@ -357,9 +463,75 @@ class _LoginScreenState extends State<LoginScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: 16),
 
-                          // Submit Button
+                          // ── Nút Demo Account ────────────────────────
+                          GestureDetector(
+                            onTap: (_isLoading || _isDemoLoading) ? null : _useDemoAccount,
+                            child: Container(
+                              width: double.infinity,
+                              height: 46,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1565C0).withOpacity(0.25),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0xFF42A5F5).withOpacity(0.6),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Center(
+                                child: _isDemoLoading
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.flash_on_rounded,
+                                            color: Color(0xFF42A5F5),
+                                            size: 18,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'Dùng tài khoản Demo',
+                                            style: GoogleFonts.poppins(
+                                              color: const Color(0xFF42A5F5),
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                            ),
+                          ),
+
+                          // ── Divider ─────────────────────────────────
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Row(children: [
+                              Expanded(child: Divider(color: Colors.white.withOpacity(0.15))),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  'hoặc',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    color: Colors.white.withOpacity(0.4),
+                                  ),
+                                ),
+                              ),
+                              Expanded(child: Divider(color: Colors.white.withOpacity(0.15))),
+                            ]),
+                          ),
+
+                          // ── Nút Đăng Nhập chính ─────────────────────
                           GestureDetector(
                             onTap: _isLoading ? null : _handleLogin,
                             child: Container(

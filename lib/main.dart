@@ -86,10 +86,10 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4FF),
+      backgroundColor: const Color(0xFF1C1B33),
       // ── AppBar ──────────────────────────────────────────────
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1565C0),
+        backgroundColor: const Color(0xFF2E335A),
         elevation: 0,
         centerTitle: true,
         title: Row(

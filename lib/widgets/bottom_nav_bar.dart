@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// BottomNavBar — Navigation Bar dùng chung cho toàn bộ app.
-/// 3 tab: Home | Forecast | More (theo đúng mockup nhóm)
+/// BottomNavBar — Purple Glassmorphism Theme
+/// Palette: bg #1F1D47 | active #C427FB | inactive #EBEBF5
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
@@ -17,10 +17,11 @@ class BottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF1F1D47),
+        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1565C0).withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),
@@ -32,27 +33,9 @@ class BottomNavBar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _NavItem(
-                icon: Icons.home_outlined,
-                activeIcon: Icons.home_rounded,
-                label: 'Home',
-                isSelected: currentIndex == 0,
-                onTap: () => onTap(0),
-              ),
-              _NavItem(
-                icon: Icons.wb_sunny_outlined,
-                activeIcon: Icons.wb_sunny_rounded,
-                label: 'Forecast',
-                isSelected: currentIndex == 1,
-                onTap: () => onTap(1),
-              ),
-              _NavItem(
-                icon: Icons.menu_outlined,
-                activeIcon: Icons.menu_rounded,
-                label: 'More',
-                isSelected: currentIndex == 2,
-                onTap: () => onTap(2),
-              ),
+              _NavItem(icon: Icons.home_outlined,      activeIcon: Icons.home_rounded,      label: 'Home',     isSelected: currentIndex == 0, onTap: () => onTap(0)),
+              _NavItem(icon: Icons.cloud_outlined,     activeIcon: Icons.cloud_rounded,     label: 'Forecast', isSelected: currentIndex == 1, onTap: () => onTap(1)),
+              _NavItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'More',     isSelected: currentIndex == 2, onTap: () => onTap(2)),
             ],
           ),
         ),
@@ -84,27 +67,28 @@ class _NavItem extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF1565C0).withOpacity(0.10)
-              : Colors.transparent,
+          gradient: isSelected
+              ? const LinearGradient(colors: [Color(0xFF48319D), Color(0xFFC427FB)])
+              : null,
+          color: isSelected ? null : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
+          boxShadow: isSelected
+              ? [BoxShadow(color: const Color(0xFFC427FB).withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 2))]
+              : [],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, anim) =>
-                  ScaleTransition(scale: anim, child: child),
+              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
               child: Icon(
                 isSelected ? activeIcon : icon,
                 key: ValueKey(isSelected),
-                color: isSelected
-                    ? const Color(0xFF1565C0)
-                    : const Color(0xFF90A4AE),
-                size: 26,
+                color: isSelected ? Colors.white : const Color(0xFFEBEBF5).withValues(alpha: 0.4),
+                size: 24,
               ),
             ),
             const SizedBox(height: 3),
@@ -112,11 +96,8 @@ class _NavItem extends StatelessWidget {
               label,
               style: GoogleFonts.poppins(
                 fontSize: 11,
-                fontWeight:
-                    isSelected ? FontWeight.w700 : FontWeight.w400,
-                color: isSelected
-                    ? const Color(0xFF1565C0)
-                    : const Color(0xFF90A4AE),
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                color: isSelected ? Colors.white : const Color(0xFFEBEBF5).withValues(alpha: 0.4),
               ),
             ),
           ],
