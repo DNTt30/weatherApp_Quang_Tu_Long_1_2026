@@ -8,6 +8,8 @@ import 'screens/register_screen.dart';
 import 'widgets/bottom_nav_bar.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'service/auth_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,18 +21,36 @@ Future<void> main() async {
   runApp(MyApp());
 }
 class MyApp extends StatelessWidget {
+  final AuthService _authService = AuthService();
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Weather App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        useMaterial3: true,
       ),
-      initialRoute: '/',
+      home: StreamBuilder<User?>(
+        stream: _authService.authStateChanges,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+          if (snapshot.hasData) {
+            return const MainShell();
+          }
+          return const LoginScreen();
+        },
+      ),
       routes: {
-        '/': (context) => MainShell(),
-        '/login': (context) => LoginScreen(),
-        '/register': (context) => RegisterScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
       },
     );
   }
@@ -88,6 +108,49 @@ class _MainShellState extends State<MainShell> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.white),
+            tooltip: 'Đăng xuất',
+            onPressed: () async {
+              bool? confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text(
+                    'Đăng xuất',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+                  ),
+                  content: Text(
+                    'Bạn có chắc chắn muốn đăng xuất không?',
+                    style: GoogleFonts.poppins(),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(
+                        'Hủy',
+                        style: GoogleFonts.poppins(color: Colors.grey),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text(
+                        'Đăng xuất',
+                        style: GoogleFonts.poppins(
+                          color: const Color(0xFFC62828),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm == true) {
+                await AuthService().signOut();
+              }
+            },
+          ),
+        ],
       ),
       // ── 3 màn hình dùng IndexedStack (giữ state) ────────────
       body: IndexedStack(
