@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../service/settings_service.dart';
 
 // ============================================================
 // AboutScreen — Tú phụ trách (Cài đặt, Thông tin, Đăng xuất)
@@ -311,7 +312,21 @@ class AboutScreen extends StatelessWidget {
               Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
               _buildSettingTile(Icons.dark_mode_rounded, 'Giao diện', 'Tối (Dark)'),
               Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
-              _buildSettingTile(Icons.thermostat_rounded, 'Đơn vị nhiệt độ', '°C'),
+              // Nút Đổi đơn vị nhiệt độ (C <-> F)
+              ValueListenableBuilder<bool>(
+                valueListenable: SettingsService.isCelsius,
+                builder: (context, isCelsius, _) {
+                  return InkWell(
+                    onTap: () {
+                      SettingsService.toggleTemperatureUnit();
+                    },
+                    child: _buildSettingTile(
+                        Icons.thermostat_rounded,
+                        'Đơn vị nhiệt độ',
+                        isCelsius ? '°C' : '°F'),
+                  );
+                },
+              ),
               Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
               
               // Nút Đăng Xuất

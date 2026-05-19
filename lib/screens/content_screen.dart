@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/forecast.dart';
 import '../models/weather.dart';
-import '../models/city.dart';
+import '../service/settings_service.dart';
 
 // ============================================================
 // ContentScreen — Quang phụ trách
@@ -45,47 +45,52 @@ class ContentScreen extends StatelessWidget {
           colors: [Color(0xFF2E335A), Color(0xFF1C1B33)],
         ),
       ),
-      child: Column(children: [
-        _buildHeader(),
-        Expanded(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-            child: Column(children: [
-              // Weather warning card
-              if (currentWeather.getWarning() != null) ...[
-                _buildWarningCard(currentWeather),
-                const SizedBox(height: 16),
-              ],
+      child: ValueListenableBuilder<bool>(
+        valueListenable: SettingsService.isCelsius,
+        builder: (context, isCelsius, _) {
+          return Column(children: [
+            _buildHeader(),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                child: Column(children: [
+                  // Weather warning card
+                  if (currentWeather.getWarning() != null) ...[
+                    _buildWarningCard(currentWeather),
+                    const SizedBox(height: 16),
+                  ],
 
-              // Weather stats (humidity, wind, UV)
-              _buildWeatherStats(currentWeather),
-              const SizedBox(height: 20),
+                  // Weather stats (humidity, wind, UV)
+                  _buildWeatherStats(currentWeather),
+                  const SizedBox(height: 20),
 
-              // Hourly forecast
-              _sectionLabel('Dự Báo Theo Giờ'),
-              const SizedBox(height: 10),
-              _buildHourlyRow(),
-              const SizedBox(height: 20),
+                  // Hourly forecast
+                  _sectionLabel('Dự Báo Theo Giờ'),
+                  const SizedBox(height: 10),
+                  _buildHourlyRow(isCelsius),
+                  const SizedBox(height: 20),
 
-              // 5-day forecast cards
-              _sectionLabel('Dự Báo Chi Tiết 5 Ngày'),
-              const SizedBox(height: 10),
-              ...forecasts.map((fo) => _buildForecastCard(fo)),
+                  // 5-day forecast cards
+                  _sectionLabel('Dự Báo Chi Tiết 5 Ngày'),
+                  const SizedBox(height: 10),
+                  ...forecasts.map((fo) => _buildForecastCard(fo, isCelsius)),
 
-              const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-              // City comparison table
-              _sectionLabel('So Sánh Thành Phố'),
-              const SizedBox(height: 10),
-              _buildComparisonTable(cityWeathers),
+                  // City comparison table
+                  _sectionLabel('So Sánh Thành Phố'),
+                  const SizedBox(height: 10),
+                  _buildComparisonTable(cityWeathers, isCelsius),
 
-              const SizedBox(height: 4),
-            ]),
-          ),
-        ),
-        _buildFooter(),
-      ]),
+                  const SizedBox(height: 4),
+                ]),
+              ),
+            ),
+            _buildFooter(),
+          ]);
+        }
+      ),
     );
   }
 
@@ -278,7 +283,7 @@ class ContentScreen extends StatelessWidget {
   }
 
   // ── Hourly Forecast Row ───────────────────────────────────
-  Widget _buildHourlyRow() {
+  Widget _buildHourlyRow(bool isCelsius) {
     final hours = [
       {'time':'09:00','temp':28,'icon':Icons.wb_sunny_rounded,'color':const Color(0xFFFFD700),'rain':5},
       {'time':'11:00','temp':31,'icon':Icons.wb_sunny_rounded,'color':const Color(0xFFFFD700),'rain':5},
@@ -313,7 +318,7 @@ class ContentScreen extends StatelessWidget {
               const SizedBox(height: 10),
               Icon(h['icon'] as IconData, color: h['color'] as Color, size: 22),
               const SizedBox(height: 6),
-              Text('${h['temp']}°', style: GoogleFonts.poppins(
+              Text('${isCelsius ? h['temp'] : ((h['temp'] as int) * 9 / 5 + 32).toInt()}°', style: GoogleFonts.poppins(
                 color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
               Row(mainAxisSize: MainAxisSize.min, children: [
@@ -330,7 +335,7 @@ class ContentScreen extends StatelessWidget {
   }
 
   // ── Forecast Card ─────────────────────────────────────────
-  Widget _buildForecastCard(Forecast fo) {
+  Widget _buildForecastCard(Forecast fo, bool isCelsius) {
     final bool highRain = fo.rainProbability > 50;
     final Color iconColor = highRain ? const Color(0xFF83B4FF) : const Color(0xFFFFD700);
     final IconData icon = highRain ? Icons.grain_rounded : Icons.wb_sunny_rounded;
@@ -357,7 +362,7 @@ class ContentScreen extends StatelessWidget {
           Row(children: [
             const Icon(Icons.water_drop_rounded, size: 11, color: Color(0xFF83B4FF)),
             const SizedBox(width: 3),
-            Text('${fo.rainProbability}%  •  Chênh lệch: ${fo.getTemperatureDifference().toStringAsFixed(1)}°C',
+            Text('${fo.rainProbability}%  •  Chênh lệch: ${isCelsius ? fo.getTemperatureDifference().toStringAsFixed(1) : (fo.getTemperatureDifference() * 9 / 5).toStringAsFixed(1)}°',
               style: GoogleFonts.poppins(color: Colors.white38, fontSize: 10)),
           ]),
           const SizedBox(height: 5),
@@ -370,11 +375,11 @@ class ContentScreen extends StatelessWidget {
         ])),
         const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('${fo.maxTemp.toInt()}°', style: GoogleFonts.poppins(
+          Text('${isCelsius ? fo.maxTemp.toInt() : (fo.maxTemp * 9 / 5 + 32).toInt()}°', style: GoogleFonts.poppins(
             color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-          Text('${fo.minTemp.toInt()}°', style: GoogleFonts.poppins(
+          Text('${isCelsius ? fo.minTemp.toInt() : (fo.minTemp * 9 / 5 + 32).toInt()}°', style: GoogleFonts.poppins(
             color: Colors.white38, fontSize: 13)),
-          Text('TB: ${fo.getAverageTemp().toStringAsFixed(0)}°',
+          Text('TB: ${isCelsius ? fo.getAverageTemp().toStringAsFixed(0) : (fo.getAverageTemp() * 9 / 5 + 32).toStringAsFixed(0)}°',
             style: GoogleFonts.poppins(color: Colors.white24, fontSize: 10)),
         ]),
       ]),
@@ -382,7 +387,7 @@ class ContentScreen extends StatelessWidget {
   }
 
   // ── City Comparison Table ─────────────────────────────────
-  Widget _buildComparisonTable(List<Weather> weathers) {
+  Widget _buildComparisonTable(List<Weather> weathers, bool isCelsius) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.07),
@@ -418,7 +423,7 @@ class ContentScreen extends StatelessWidget {
             child: Row(children: [
               Expanded(flex:3, child: Text(w.city, style: GoogleFonts.poppins(
                 color: const Color(0xFFE0D9FF), fontSize: 12, fontWeight: FontWeight.w500))),
-              Expanded(flex:2, child: Text('${w.temperature.toInt()}°C', textAlign: TextAlign.center,
+              Expanded(flex:2, child: Text('${isCelsius ? w.temperature.toInt() : (w.temperature * 9 / 5 + 32).toInt()}°', textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12))),
               Expanded(flex:2, child: Text('${w.humidity.toInt()}%', textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12))),

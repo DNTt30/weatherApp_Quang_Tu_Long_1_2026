@@ -18,6 +18,7 @@
 | Mục | Link |
 |-----|------|
 | 📁 **Git Repository** | https://github.com/DNTt30/weatherApp_Quang_Tu_Long_1_2026 |
+| 🎨 **Figma Wireframe & Mockup** | [Figma Project Link](https://www.figma.com/design/tELT47KXj2t06pwxtkQoJw/Untitled?node-id=0-1&p=f&t=ayDaeKRBLNb1yvRz-0) |
 | 🎬 **Demo YouTube** | *(Cập nhật sau khi quay video)* |
 
 ---
@@ -85,32 +86,252 @@ test/
 
 ---
 
-## 🏗️ Kiến trúc & Thiết kế
+## 🏗️ Kiến trúc & Thiết kế UML
 
-### Object Classes
+### 1. Sơ đồ lớp (Class Diagram)
 
-| Class | Thuộc tính | Phương thức |
-|-------|-----------|-------------|
-| `Weather` | city, temperature, status, humidity, isRaining | `getWeatherInfo()` |
-| `Forecast` | id, dateTime, minTemp, maxTemp, rainProbability | `getForecast()`, `getTemperatureDifference()` |
-| `City` | id, name | `printName()` |
-| `AuthService` | _auth, _db | `signIn()`, `signUp()`, `signOut()` |
-| `FirestoreService` | cities | `addCity()` |
+```mermaid
+classDiagram
+    class User {
+        +String uid
+        +String email
+        +String username
+        +Timestamp createdAt
+    }
 
-### Firestore Collections
+    class Weather {
+        +String city
+        +double temperature
+        +String status
+        +double humidity
+        +bool isRaining
+        +double windSpeed
+        +int uvIndex
+        +String icon
+        +Weather(city, temperature, status, humidity, isRaining, windSpeed, uvIndex, icon)
+        +String formatTemperature(bool fahrenheit)
+        +String? getWarning()
+        +String getUvLabel()
+        +String getWindLabel()
+    }
+
+    class Forecast {
+        +String id
+        +String dateTime
+        +double minTemp
+        +double maxTemp
+        +int rainProbability
+        +Forecast(id, dateTime, minTemp, maxTemp, rainProbability)
+        +double getTemperatureDifference()
+        +double getAverageTemp()
+    }
+
+    class City {
+        +int id
+        +String name
+        +double latitude
+        +double longitude
+        +bool isFavorite
+        +City(id, name, latitude, longitude, isFavorite)
+        +void toggleFavorite()
+        +String getCityInfo()
+    }
+
+    class AuthService {
+        -FirebaseAuth _auth
+        -FirebaseFirestore _db
+        +Stream~User?~ authStateChanges
+        +User? currentUser
+        +Future~UserCredential?~ signIn(email, password)
+        +Future~UserCredential?~ signUp(email, username, password)
+        +Future~void~ signOut()
+    }
+
+    class FirestoreService {
+        +CollectionReference cities
+        +Future~DocumentReference~ addCity(cityData)
+        +Stream~QuerySnapshot~ getCitiesStream()
+        +Future~void~ updateCity(docId, updatedData)
+        +Future~void~ deleteCity(docId)
+        +Future~void~ toggleFavoriteCity(cityName, isFavorite)
+        +Future~List~ getFavoriteCities()
+    }
+
+    class SettingsService {
+        +ValueNotifier~bool~ isCelsius
+        +void toggleTemperatureUnit()
+    }
+
+    AuthService --> User : quản lý
+    HomeScreen --> Weather : khởi tạo
+    HomeScreen --> Forecast : khởi tạo danh sách
+    HomeScreen --> City : khởi tạo danh sách
+    HomeScreen --> FirestoreService : gọi lưu Firestore
+    HomeScreen --> SettingsService : lắng nghe đổi đơn vị
+    ContentScreen --> Forecast : hiển thị
+    ContentScreen --> SettingsService : lắng nghe đổi đơn vị
+```
+
+### 2. Sơ đồ tuần tự (Sequence Diagrams)
+
+#### 2.1 Luồng Đăng Nhập (Login Flow)
+```mermaid
+sequenceDiagram
+    actor User
+    participant LoginScreen
+    participant AuthService
+    participant FirebaseAuth
+    participant MainShell
+
+    User->>LoginScreen: Nhập email & password
+    User->>LoginScreen: Bấm "Đăng Nhập"
+    LoginScreen->>AuthService: signIn(email, password)
+    AuthService->>FirebaseAuth: signInWithEmailAndPassword()
+    FirebaseAuth-->>AuthService: UserCredential / Exception
+    alt Đăng nhập thành công
+        AuthService-->>LoginScreen: UserCredential
+        LoginScreen->>MainShell: Chuyển hướng tự động (StreamBuilder)
+        MainShell-->>User: Hiển thị HomeScreen
+    else Thông tin sai / Lỗi kết nối
+        AuthService-->>LoginScreen: Exception (FirebaseAuthException)
+        LoginScreen-->>User: Hiển thị SnackBar báo lỗi
+    end
+```
+
+#### 2.2 Luồng Đăng Ký (Register Flow)
+```mermaid
+sequenceDiagram
+    actor User
+    participant RegisterScreen
+    participant AuthService
+    participant FirebaseAuth
+    participant Firestore
+
+    User->>RegisterScreen: Nhập email, username, password, confirm
+    User->>RegisterScreen: Bấm "Đăng Ký"
+    RegisterScreen->>RegisterScreen: Validate dữ liệu đầu vào
+    RegisterScreen->>AuthService: signUp(email, username, password)
+    AuthService->>FirebaseAuth: createUserWithEmailAndPassword()
+    FirebaseAuth-->>AuthService: UserCredential
+    AuthService->>FirebaseAuth: updateDisplayName(username)
+    AuthService->>Firestore: collection("users").doc(uid).set({...})
+    Firestore-->>AuthService: Lưu User thành công
+    AuthService-->>RegisterScreen: Đăng ký hoàn tất
+    RegisterScreen-->>User: Hiển thị thông báo & chuyển sang LoginScreen
+```
+
+#### 2.3 Luồng Đổi Đơn Vị Nhiệt Độ (Celsius <-> Fahrenheit)
+```mermaid
+sequenceDiagram
+    actor User
+    participant AboutScreen
+    participant SettingsService
+    participant HomeScreen
+    participant ContentScreen
+
+    User->>AboutScreen: Bấm "Đơn vị nhiệt độ" (Settings)
+    AboutScreen->>SettingsService: toggleTemperatureUnit()
+    SettingsService->>SettingsService: isCelsius.value = !isCelsius.value (Notify listeners)
+    SettingsService-->>HomeScreen: Trigger rebuild (ValueListenableBuilder)
+    SettingsService-->>ContentScreen: Trigger rebuild (ValueListenableBuilder)
+    HomeScreen-->>User: Cập nhật nhiệt độ hiển thị (°C hoặc °F)
+    ContentScreen-->>User: Cập nhật nhiệt độ hiển thị (°C hoặc °F)
+```
+
+#### 2.4 Luồng Đồng Bộ Yêu Thích lên Firestore NoSQL
+```mermaid
+sequenceDiagram
+    actor User
+    participant HomeScreen
+    participant FirestoreService
+    participant Firestore
+
+    User->>HomeScreen: Nhấn nút Star (Yêu thích) ở City Card
+    HomeScreen->>HomeScreen: Cập nhật UI ngay lập tức (setState)
+    HomeScreen->>FirestoreService: toggleFavoriteCity(cityName, isFavorite)
+    alt isFavorite == true
+        FirestoreService->>Firestore: users/{uid}/favorites/{cityName}.set(...)
+    else isFavorite == false
+        FirestoreService->>Firestore: users/{uid}/favorites/{cityName}.delete()
+    end
+    Firestore-->>FirestoreService: Xác nhận thành công
+    FirestoreService-->>HomeScreen: Hoàn tất đồng bộ ngầm
+```
+
+### 3. Sơ đồ hoạt động (Activity Diagrams)
+
+#### 3.1 Luồng Khởi Động App & Kiểm Tra Trạng Thái Đăng Nhập
+```mermaid
+flowchart TD
+    A([Khởi chạy App]) --> B[Firebase.initializeApp]
+    B --> C{Cấu hình Firebase OK?}
+    C -- No --> D([Hiển thị lỗi khởi tạo])
+    C -- Yes --> E[Lắp StreamBuilder lắng nghe authStateChanges]
+    E --> F{snapshot.connectionState == waiting?}
+    F -- Yes --> G[Hiển thị màn hình chờ tải]
+    G --> E
+    F -- No --> H{snapshot.hasData và user != null?}
+    H -- Yes --> I[Tự động vào MainShell]
+    H -- No --> J[Hiển thị LoginScreen]
+    I --> K[Hiển thị HomeScreen Tab mặc định]
+```
+
+#### 3.2 Luồng Kiểm Tra và Cảnh Báo Điều Kiện Thời Tiết Xấu
+```mermaid
+flowchart TD
+    A([Màn hình chính/Dự báo hiển thị]) --> B[Kiểm tra chỉ số UV và Tốc độ gió]
+    B --> C{Chỉ số UV >= 8?}
+    C -- Yes --> D[Thêm cảnh báo: UV rất cao - Dùng kem chống nắng]
+    C -- No --> E{Chỉ số UV >= 6?}
+    E -- Yes --> F[Thêm cảnh báo: UV cao - Hạn chế ra ngoài]
+    E -- No --> G[Không thêm cảnh báo UV]
+    
+    D & F & G --> H{Tốc độ gió >= 60 km/h?}
+    H -- Yes --> I[Thêm cảnh báo: Gió bão - Không ra ngoài]
+    H -- No --> J{Tốc độ gió >= 30 km/h?}
+    J -- Yes --> K[Thêm cảnh báo: Gió mạnh - Cẩn thận di chuyển]
+    J -- No --> L[Không thêm cảnh báo gió]
+    
+    I & K & L --> M{Có cảnh báo nào không?}
+    M -- Yes --> N[Hiển thị Warning Card Glassmorphism màu vàng đỏ]
+    M -- No --> O[Ẩn Warning Card]
+```
+
+### 4. Thiết kế Database Firestore (NoSQL)
 
 ```
-Firestore (NoSQL):
-├── users/{uid}
-│   ├── uid: String
-│   ├── email: String
-│   ├── username: String
-│   └── createdAt: Timestamp
-└── cities/{auto-id}
-    ├── name: String
-    ├── temperature: Number
-    └── status: String
+Firestore (NoSQL Database):
+├── users/ (Collection lưu thông tin người dùng)
+│   └── {uid}:
+│       ├── uid: String
+│       ├── email: String
+│       ├── username: String
+│       └── createdAt: Timestamp
+│       └── favorites/ (Sub-collection lưu danh sách yêu thích)
+│           └── {cityName}:
+│               ├── name: String
+│               └── addedAt: Timestamp
+└── cities/ (Collection chung chứa danh sách thành phố)
+    └── {auto-id}:
+        ├── name: String
+        ├── temperature: Number
+        ├── status: String
+        └── createdAt: Timestamp
 ```
+
+### 5. Ma trận các thao tác CRUD với Firebase/Firestore
+
+| Thực thể (Collection) | Thao tác | Mô tả chi tiết trong dự án | Hàm xử lý & Vị trí code |
+|-----------------------|----------|----------------------------|------------------------|
+| **Tài khoản (users)** | **[C]reate** | Đăng ký tài khoản mới và lưu thông tin người dùng | `signUp()` trong [auth_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/auth_service.dart) |
+| | **[R]ead** | Lắng nghe trạng thái đăng nhập để tự động chuyển màn hình | `StreamBuilder` trong [main.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/main.dart) |
+| **Thành phố (cities)** | **[C]reate** | Thêm thành phố giả lập mới vào Firestore | `addCity()` trong [firestore_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/firestore_service.dart) |
+| | **[R]ead** | Truy vấn danh sách các thành phố đã thêm trên Cloud | `getCitiesStream()` trong [firestore_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/firestore_service.dart) |
+| | **[U]pdate** | Cập nhật thời tiết/thông tin của thành phố | `updateCity()` trong [firestore_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/firestore_service.dart) |
+| | **[D]elete** | Xóa thành phố khỏi danh sách quản lý | `deleteCity()` trong [firestore_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/firestore_service.dart) |
+| **Yêu thích (favorites)**| **[C]reate** | Thả tim để lưu trạng thái yêu thích thành phố | `toggleFavoriteCity(..., true)` trong [firestore_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/firestore_service.dart) |
+| | **[R]ead** | Tự động đồng bộ trạng thái sao vàng yêu thích khi mở app | `getFavoriteCities()` trong [firestore_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/firestore_service.dart) |
+| | **[D]elete** | Bỏ thả tim để hủy trạng thái yêu thích trên Cloud | `toggleFavoriteCity(..., false)` trong [firestore_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/firestore_service.dart) |
 
 ---
 
@@ -143,6 +364,28 @@ flutter run
 flutter test
 ```
 
+### Bước 5: Build & Deploy lên Firebase Hosting (Tối ưu 60 FPS)
+
+Ứng dụng Flutter Web có thể được deploy rất nhanh chóng để giảng viên truy cập trực tiếp:
+
+1. **Build bản phát hành Web:**
+   ```bash
+   flutter build web --release --web-renderer canvaskit
+   ```
+   *(Tham số `--web-renderer canvaskit` giúp ứng dụng vẽ giao diện bằng GPU, giữ vững hiệu suất **60 FPS** mượt mà trên mọi thiết bị)*.
+
+2. **Cấu hình và Deploy qua Firebase Tools:**
+   ```bash
+   npm install -g firebase-tools
+   firebase login
+   firebase init hosting
+   # - Thư mục chứa web: build/web
+   # - Cấu hình Single Page App (SPA): Yes
+   # - Ghi đè index.html: No
+   
+   firebase deploy --only hosting
+   ```
+
 ---
 
 ## 🧪 Unit Tests (25 Test Cases)
@@ -158,22 +401,35 @@ flutter test
 
 ---
 
-## 🎨 Thiết kế UI
+## 🎨 Thiết kế UI (Purple Glassmorphism Theme)
 
-### Bảng màu
+Ứng dụng sử dụng phong cách thiết kế **Glassmorphism** sang trọng với tông màu tím tối đặc trưng của Apple Weather, đem lại trải nghiệm thị giác hiện đại và mượt mà.
+
+### 📸 Hình ảnh giao diện thực tế (Screenshots)
+
+<p align="center">
+  <img src="screenshots/media__1779097361112.png" width="30%" alt="Màn hình Đăng Nhập / Đăng Ký"/>
+  <img src="screenshots/media__1779097784603.png" width="30%" alt="Màn hình chính - Home Screen"/>
+  <img src="screenshots/media__1779103349163.png" width="30%" alt="Màn hình dự báo chi tiết - Forecast Screen"/>
+</p>
+
+<p align="center">
+  <img src="screenshots/media__1779097794838.png" width="30%" alt="Màn hình About / More (Cài Đặt)"/>
+</p>
+
+### Bảng màu chủ đạo
 | Tên | Hex | Dùng cho |
 |-----|-----|---------|
-| Primary Blue | `#1565C0` | AppBar, tiêu đề, nút |
-| Light Blue | `#1E88E5` | Card header, accent |
-| Sky Blue | `#42A5F5` | Gradient end |
-| Amber | `#FFB300` | Icon nắng |
-| Dark Navy | `#2E335A` | Login background |
-| Purple | `#48319D` | Login gradient |
+| Deep Purple (Gốc) | `#1F1D47` | Background đáy toàn màn hình |
+| Light Purple | `#2E335A` | Gradient nền trang trí |
+| Vivid Purple | `#48319D` | Nền Gradient của Main Card thời tiết |
+| Glass White | `rgba(255, 255, 255, 0.08)` | Các thẻ Card Glassmorphism |
+| Amber Accent | `#FFD700` | Icon ngôi sao vàng yêu thích, mặt trời |
+| Sky Blue Accent | `#83B4FF` | Chỉ báo tiến trình xác suất mưa |
 
-### Font
-- **Poppins** — font chính toàn app (Google Fonts)
-- **Inter** — About screen
-- **Lora** — About screen heading
+### Font chữ
+- **Poppins** — Font chính toàn ứng dụng để hiển thị các con số nhiệt độ và text (Google Fonts)
+- **Inter / Lora** — Sử dụng trên About screen để thể hiện danh sách thành viên một cách trang trọng.
 
 ---
 

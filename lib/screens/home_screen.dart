@@ -4,6 +4,7 @@ import '../models/city.dart';
 import '../models/weather.dart';
 import '../models/forecast.dart';
 import '../service/firestore_service.dart';
+import '../service/settings_service.dart';
 
 // ============================================================
 // HomeScreen — Long phụ trách
@@ -71,10 +72,26 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         name: d['city'],
         latitude: d['lat'],
         longitude: d['lon'],
-        isFavorite: i == 0, // Hà Nội mặc định là yêu thích
+        isFavorite: false, // Sẽ load từ Firestore sau
       );
     });
     _animCtrl.forward();
+    _loadFavoritesFromFirestore();
+  }
+
+  Future<void> _loadFavoritesFromFirestore() async {
+    try {
+      final favorites = await firestoreService.getFavoriteCities();
+      if (mounted) {
+        setState(() {
+          for (var city in _cities) {
+            city.isFavorite = favorites.contains(city.name);
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint("Lỗi tải thành phố yêu thích từ Firestore: $e");
+    }
   }
 
   @override
@@ -90,6 +107,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _toggleFavorite(int index) {
     setState(() => _cities[index].toggleFavorite());
+    // Đồng bộ lên Firestore
+    firestoreService.toggleFavoriteCity(
+      _cities[index].name,
+      _cities[index].isFavorite,
+    );
   }
 
   // ── Helpers ───────────────────────────────────────────────
@@ -151,31 +173,36 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           colors: [Color(0xFF2E335A), Color(0xFF1C1B33)],
         ),
       ),
-      child: Column(children: [
-        _buildGroupHeader(),
-        Expanded(
-          child: FadeTransition(
-            opacity: _fadeAnim,
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-              child: Column(children: [
-                _buildMainCard(weather, selectedCity),
-                const SizedBox(height: 20),
-                _buildHourlyForecast(),
-                const SizedBox(height: 20),
-                _buildForecastList(forecasts),
-                const SizedBox(height: 20),
-                _buildCityListSection(),
-                const SizedBox(height: 16),
-                _buildAddCityBtn(),
-                const SizedBox(height: 4),
-              ]),
+      child: ValueListenableBuilder<bool>(
+        valueListenable: SettingsService.isCelsius,
+        builder: (context, isCelsius, _) {
+          return Column(children: [
+            _buildGroupHeader(),
+            Expanded(
+              child: FadeTransition(
+                opacity: _fadeAnim,
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                  child: Column(children: [
+                    _buildMainCard(weather, selectedCity, isCelsius),
+                    const SizedBox(height: 20),
+                    _buildHourlyForecast(isCelsius),
+                    const SizedBox(height: 20),
+                    _buildForecastList(forecasts, isCelsius),
+                    const SizedBox(height: 20),
+                    _buildCityListSection(isCelsius),
+                    const SizedBox(height: 16),
+                    _buildAddCityBtn(),
+                    const SizedBox(height: 4),
+                  ]),
+                ),
+              ),
             ),
-          ),
-        ),
-        _buildFooter(),
-      ]),
+            _buildFooter(),
+          ]);
+        }
+      ),
     );
   }
 
@@ -213,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   // ── Main Weather Card ─────────────────────────────────────
-  Widget _buildMainCard(Weather weather, City city) {
+  Widget _buildMainCard(Weather weather, City city, bool isCelsius) {
     final warning = weather.getWarning();
     return Container(
       width: double.infinity,
@@ -260,7 +287,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         Align(
           alignment: Alignment.centerLeft,
           child: Text(
-            weather.formatTemperature(),
+            weather.formatTemperature(fahrenheit: !isCelsius),
             style: GoogleFonts.poppins(
               color: Colors.white, fontSize: 68,
               fontWeight: FontWeight.w200, height: 1),
@@ -320,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   );
 
   // ── Hourly Forecast ───────────────────────────────────────
-  Widget _buildHourlyForecast() {
+  Widget _buildHourlyForecast(bool isCelsius) {
     final hours = [
       {'time':'Bây giờ','temp':32,'icon':Icons.wb_sunny_rounded,'color':const Color(0xFFFFD700)},
       {'time':'13:00',  'temp':33,'icon':Icons.wb_sunny_rounded,'color':const Color(0xFFFFD700)},
@@ -356,8 +383,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 const SizedBox(height: 8),
                 Icon(h['icon'] as IconData, color: h['color'] as Color, size: 22),
                 const SizedBox(height: 8),
-                Text('${h['temp']}°', style: GoogleFonts.poppins(
-                  color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                Text(
+                  '${isCelsius ? h['temp'] : ((h['temp'] as int) * 9 / 5 + 32).toInt()}°',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)
+                ),
               ]),
             )).toList(),
           ),
@@ -367,7 +397,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   // ── 5-Day Forecast List ───────────────────────────────────
-  Widget _buildForecastList(List<Forecast> forecasts) {
+  Widget _buildForecastList(List<Forecast> forecasts, bool isCelsius) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _sectionLabel('Dự Báo 5 Ngày Tới'),
       const SizedBox(height: 10),
@@ -421,9 +451,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 const SizedBox(width: 12),
                 // Temp range
                 Row(children: [
-                  Text('${fo.maxTemp.toInt()}°', style: GoogleFonts.poppins(
+                  Text('${isCelsius ? fo.maxTemp.toInt() : (fo.maxTemp * 9 / 5 + 32).toInt()}°', style: GoogleFonts.poppins(
                     color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                  Text(' / ${fo.minTemp.toInt()}°', style: GoogleFonts.poppins(
+                  Text(' / ${isCelsius ? fo.minTemp.toInt() : (fo.minTemp * 9 / 5 + 32).toInt()}°', style: GoogleFonts.poppins(
                     color: Colors.white38, fontSize: 12)),
                 ]),
               ]),
@@ -435,16 +465,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   // ── City List Section (cuộn xuống thấy) ──────────────────
-  Widget _buildCityListSection() {
+  Widget _buildCityListSection(bool isCelsius) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _sectionLabel('Thành Phố Lớn'),
       const SizedBox(height: 10),
-      ...List.generate(_cities.length, (i) => _buildCityCard(i)),
+      ...List.generate(_cities.length, (i) => _buildCityCard(i, isCelsius)),
     ]);
   }
 
   // ── City Card UI ──────────────────────────────────────────
-  Widget _buildCityCard(int index) {
+  Widget _buildCityCard(int index, bool isCelsius) {
     final City city = _cities[index];
     final d = _cityWeatherData[index];
     final bool isSelected = index == _selectedCityIndex;
@@ -497,8 +527,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
           // Temperature
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text('${(d['temp'] as double).toInt()}°C', style: GoogleFonts.poppins(
-              color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              '${isCelsius ? (d['temp'] as double).toInt() : ((d['temp'] as double) * 9 / 5 + 32).toInt()}°',
+              style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
+            ),
             Text(d['status'], style: GoogleFonts.poppins(color: Colors.white38, fontSize: 11)),
           ]),
           const SizedBox(width: 8),
@@ -520,7 +552,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   // ── Add City Button ───────────────────────────────────────
   Widget _buildAddCityBtn() {
     return GestureDetector(
-      onTap: () => firestoreService.addCity(),
+      onTap: () {
+        firestoreService.addCity({
+          'name': 'New City',
+          'temperature': 30,
+          'status': 'Clear',
+        });
+      },
       child: Container(
         width: double.infinity, height: 50,
         decoration: BoxDecoration(
