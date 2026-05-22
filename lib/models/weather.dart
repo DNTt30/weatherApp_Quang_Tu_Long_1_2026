@@ -70,8 +70,8 @@ class Weather {
   // ── Thông tin đầy đủ ─────────────────────────────────────
   String getWeatherInfo() {
     return 'City: $city, Temp: ${formatTemperature()}, Status: $status, '
-        'Humidity: ${humidity}%, Wind: ${windSpeed}km/h, UV: $uvIndex, '
-        'Raining: ${isRaining ? "Yes" : "No"}';
+      'Humidity: $humidity%, Wind: ${windSpeed}km/h, UV: $uvIndex, '
+      'Raining: ${isRaining ? "Yes" : "No"}';
   }
 
   // ── Chuyển sang Map (Firestore) ───────────────────────────

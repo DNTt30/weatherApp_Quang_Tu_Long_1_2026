@@ -22,9 +22,6 @@ class AboutScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // ── Header ──────────────────────────────────────
-          _buildHeader(),
-
           // ── Content ─────────────────────────────────────
           Expanded(
             child: SingleChildScrollView(
@@ -33,6 +30,8 @@ class AboutScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildProfileCard(),
+                  const SizedBox(height: 24),
                   _buildAppInfoCard(),
                   const SizedBox(height: 24),
                   
@@ -60,64 +59,46 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────
-  Widget _buildHeader() {
+  // ── Profile Card (Mới) ────────────────────────────────────
+  Widget _buildProfileCard() {
+    final String userEmail = FirebaseAuth.instance.currentUser?.email ?? "Khách";
+    
     return Container(
       width: double.infinity,
-      height: 100,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF3658B1), Color(0xFFC159EC)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-              color: const Color(0xFF3658B1).withValues(alpha: 0.4),
-              blurRadius: 12,
-              offset: const Offset(0, 4))
-        ],
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
-      child: Stack(
+      child: Row(
         children: [
-          Positioned(
-              right: -20,
-              top: -20,
-              child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.05)))),
-          Center(
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFC427FB).withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.person_rounded, color: Color(0xFFE0D9FF), size: 36),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
             child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.settings_rounded,
-                        color: Colors.white54, size: 18),
-                    const SizedBox(width: 8),
-                    Text('Mở rộng (More)',
-                        style: GoogleFonts.poppins(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500)),
-                  ]),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text('Tú_More',
-                        style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700)),
-                  ),
-                ]),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Hồ Sơ Cá Nhân',
+                    style: GoogleFonts.poppins(
+                        color: Colors.white54,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500)),
+                const SizedBox(height: 4),
+                Text(userEmail,
+                    style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700)),
+              ],
+            ),
           ),
         ],
       ),
@@ -298,8 +279,9 @@ class AboutScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionLabel('Cài Đặt'),
+        _sectionLabel('Tùy Chỉnh (Settings)'),
         const SizedBox(height: 12),
+        // Nhóm Tùy chỉnh (Đổi ngôn ngữ, Giao diện, Nhiệt độ, Cảnh báo)
         Container(
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.07),
@@ -308,9 +290,31 @@ class AboutScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _buildSettingTile(Icons.language_rounded, 'Đổi ngôn ngữ', 'Tiếng Việt'),
+              InkWell(
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Tính năng Đổi ngôn ngữ đang phát triển (v2.0)!', style: GoogleFonts.poppins()),
+                      backgroundColor: const Color(0xFFC427FB),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: _buildSettingTile(Icons.language_rounded, 'Đổi ngôn ngữ', 'Tiếng Việt', showTopRadius: true),
+              ),
               Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
-              _buildSettingTile(Icons.dark_mode_rounded, 'Giao diện', 'Tối (Dark)'),
+              InkWell(
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Tính năng Đổi giao diện đang phát triển (v2.0)!', style: GoogleFonts.poppins()),
+                      backgroundColor: const Color(0xFFC427FB),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: _buildSettingTile(Icons.dark_mode_rounded, 'Giao diện', 'Tối (Dark)'),
+              ),
               Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
               // Nút Đổi đơn vị nhiệt độ (C <-> F)
               ValueListenableBuilder<bool>(
@@ -328,7 +332,66 @@ class AboutScreen extends StatelessWidget {
                 },
               ),
               Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
-              
+              // Nút Bật/tắt cảnh báo
+              ValueListenableBuilder<bool>(
+                valueListenable: SettingsService.isNotificationEnabled,
+                builder: (context, isEnabled, _) {
+                  return InkWell(
+                    onTap: () {
+                      SettingsService.toggleNotification();
+                    },
+                    child: _buildSettingTile(
+                        isEnabled ? Icons.notifications_active_rounded : Icons.notifications_off_rounded,
+                        'Cảnh báo thời tiết xấu',
+                        isEnabled ? 'Bật' : 'Tắt', showBottomRadius: true),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        
+        // Nhóm Quản lý Tài khoản (Xóa, Đăng Xuất)
+        _sectionLabel('Quản Lý Tài Khoản'),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: Column(
+            children: [
+              // Nút Xóa Tài Khoản
+              InkWell(
+                onTap: () => _showDeleteAccountDialog(context),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.orangeAccent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.person_remove_rounded,
+                            size: 18, color: Colors.orangeAccent),
+                      ),
+                      const SizedBox(width: 14),
+                      Text('Xóa Tài Khoản',
+                          style: GoogleFonts.poppins(
+                              color: Colors.orangeAccent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ),
+              Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+
               // Nút Đăng Xuất
               InkWell(
                 onTap: () async {
@@ -366,9 +429,15 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingTile(IconData icon, String title, String trailing) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  Widget _buildSettingTile(IconData icon, String title, String trailing, {bool showTopRadius = false, bool showBottomRadius = false}) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(showTopRadius ? 20 : 0),
+          bottom: Radius.circular(showBottomRadius ? 20 : 0),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
           Container(
@@ -383,7 +452,7 @@ class AboutScreen extends StatelessWidget {
           Expanded(
             child: Text(title,
                 style: GoogleFonts.poppins(
-                    color: Colors.white, fontSize: 13)),
+                    color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
           ),
           Text(trailing,
               style: GoogleFonts.poppins(
@@ -426,4 +495,54 @@ class AboutScreen extends StatelessWidget {
           color: const Color(0xFFE0D9FF),
           fontSize: 14,
           fontWeight: FontWeight.w700));
+
+  // ── Thêm Logic Xóa Tài Khoản ──────────────────────────────
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1C1B33),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            'Xóa Tài Khoản',
+            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            'Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản này không? Mọi dữ liệu (Thành phố yêu thích) sẽ bị xóa và không thể khôi phục.',
+            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text('Hủy', style: GoogleFonts.poppins(color: Colors.white54)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () async {
+                Navigator.of(ctx).pop();
+                try {
+                  await FirebaseAuth.instance.currentUser?.delete();
+                  // Sẽ tự văng ra màn hình đăng nhập nhờ AuthStateChanges stream
+                } on FirebaseAuthException catch (e) {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(
+                        content: Text('Lỗi xóa tài khoản: ${e.message}', style: GoogleFonts.poppins()),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: Text('Xóa Vĩnh Viễn', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }

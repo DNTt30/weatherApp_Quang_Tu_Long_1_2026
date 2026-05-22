@@ -5,6 +5,7 @@ import '../models/weather.dart';
 import '../models/forecast.dart';
 import '../service/firestore_service.dart';
 import '../service/settings_service.dart';
+import '../service/weather_data_manager.dart';
 
 // ============================================================
 // HomeScreen — Long phụ trách
@@ -18,44 +19,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   final FirestoreService firestoreService = FirestoreService();
+  final WeatherDataManager _dataManager = WeatherDataManager();
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
 
   int _selectedCityIndex = 0;
-
-  // ── Mock data thời tiết 5 thành phố ──────────────────────
-  final List<Map<String, dynamic>> _cityWeatherData = [
-    {
-      'city': 'Hà Nội',       'lat': 21.0285, 'lon': 105.8542,
-      'temp': 32.5, 'status': 'Sunny',  'humidity': 70.0,
-      'isRaining': false, 'wind': 12.0, 'feel': 34.0, 'uv': 7,
-      'icon': 'sunny',
-    },
-    {
-      'city': 'Đà Nẵng',     'lat': 16.0544, 'lon': 108.2022,
-      'temp': 29.0, 'status': 'Cloudy', 'humidity': 85.0,
-      'isRaining': false, 'wind': 18.0, 'feel': 31.0, 'uv': 4,
-      'icon': 'cloudy',
-    },
-    {
-      'city': 'Hồ Chí Minh', 'lat': 10.8231, 'lon': 106.6297,
-      'temp': 35.0, 'status': 'Sunny',  'humidity': 60.0,
-      'isRaining': false, 'wind': 8.0,  'feel': 38.0, 'uv': 9,
-      'icon': 'sunny',
-    },
-    {
-      'city': 'Hải Phòng',   'lat': 20.8449, 'lon': 106.6881,
-      'temp': 28.0, 'status': 'Rainy',  'humidity': 90.0,
-      'isRaining': true,  'wind': 22.0, 'feel': 29.0, 'uv': 2,
-      'icon': 'rainy',
-    },
-    {
-      'city': 'Cần Thơ',     'lat': 10.0452, 'lon': 105.7469,
-      'temp': 33.0, 'status': 'Cloudy', 'humidity': 75.0,
-      'isRaining': false, 'wind': 10.0, 'feel': 35.0, 'uv': 6,
-      'icon': 'cloudy',
-    },
-  ];
 
   // ── List<City> dùng class City đầy đủ ────────────────────
   late List<City> _cities;
@@ -65,8 +33,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.initState();
     _animCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
-    _cities = List.generate(_cityWeatherData.length, (i) {
-      final d = _cityWeatherData[i];
+    _cities = List.generate(_dataManager.allCitiesData.length, (i) {
+      final d = _dataManager.allCitiesData[i];
       return City(
         id: i + 1,
         name: d['city'],
@@ -142,29 +110,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   // ── Build ─────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final d = _cityWeatherData[_selectedCityIndex];
+    if (_dataManager.allCitiesData.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    final d = _dataManager.allCitiesData[_selectedCityIndex];
     final City selectedCity = _cities[_selectedCityIndex];
 
-    // Tạo đối tượng Weather đầy đủ
-    final Weather weather = Weather(
-      city: d['city'],
-      temperature: d['temp'],
-      status: d['status'],
-      humidity: d['humidity'],
-      isRaining: d['isRaining'],
-      windSpeed: d['wind'],
-      uvIndex: d['uv'],
-      icon: d['icon'],
-    );
+    // Tạo đối tượng Weather từ API data
+    final Weather weather = d['weather'];
 
-    // 5-day forecast data
-    final List<Forecast> forecasts = [
-      Forecast(id:'f1', dateTime:'T2', minTemp:24.0, maxTemp:32.0, rainProbability:10, description:'Nắng đẹp'),
-      Forecast(id:'f2', dateTime:'T3', minTemp:23.0, maxTemp:28.0, rainProbability:80, description:'Mưa rào'),
-      Forecast(id:'f3', dateTime:'T4', minTemp:25.0, maxTemp:30.0, rainProbability:30, description:'Nhiều mây'),
-      Forecast(id:'f4', dateTime:'T5', minTemp:22.0, maxTemp:29.0, rainProbability:10, description:'Trời quang'),
-      Forecast(id:'f5', dateTime:'T6', minTemp:26.0, maxTemp:31.0, rainProbability:50, description:'Chiều mưa'),
-    ];
+    // 5-day forecast data từ API
+    final List<Forecast> forecasts = d['forecasts'];
 
     return Container(
       decoration: const BoxDecoration(
@@ -433,8 +390,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 const SizedBox(width: 10),
                 Icon(icon, color: iconColor, size: 20),
                 const SizedBox(width: 10),
-                Text(fo.description ?? fo.getRainLabel(), style: GoogleFonts.poppins(
-                  color: Colors.white54, fontSize: 11)),
+                Expanded(
+                  child: Text(fo.description ?? fo.getRainLabel(), style: GoogleFonts.poppins(
+                    color: Colors.white54, fontSize: 11),
+                    overflow: TextOverflow.ellipsis),
+                ),
                 const Spacer(),
                 // Rain probability bar
                 SizedBox(width: 50, child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -476,7 +436,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   // ── City Card UI ──────────────────────────────────────────
   Widget _buildCityCard(int index, bool isCelsius) {
     final City city = _cities[index];
-    final d = _cityWeatherData[index];
+    final d = _dataManager.allCitiesData[index];
+    final Weather w = d['weather'];
     final bool isSelected = index == _selectedCityIndex;
 
     return GestureDetector(
@@ -504,10 +465,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: _statusColor(d['status']).withValues(alpha: 0.15),
+              color: _statusColor(w.status).withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: Icon(_statusIcon(d['status']), color: _statusColor(d['status']), size: 20),
+            child: Icon(_statusIcon(w.status), color: _statusColor(w.status), size: 20),
           ),
           const SizedBox(width: 12),
 
@@ -528,10 +489,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           // Temperature
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Text(
-              '${isCelsius ? (d['temp'] as double).toInt() : ((d['temp'] as double) * 9 / 5 + 32).toInt()}°',
+              '${isCelsius ? w.temperature.toInt() : (w.temperature * 9 / 5 + 32).toInt()}°',
               style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
             ),
-            Text(d['status'], style: GoogleFonts.poppins(color: Colors.white38, fontSize: 11)),
+            Text(w.status, style: GoogleFonts.poppins(color: Colors.white38, fontSize: 11)),
           ]),
           const SizedBox(width: 8),
 

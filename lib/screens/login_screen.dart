@@ -257,15 +257,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1F1D47).withOpacity(0.5), // Solid 2
+                          color: const Color(0x801F1D47), // Solid 2
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: const Color(0xFFE0D9FF).withOpacity(0.3), // Solid 4
+                            color: const Color(0x4DE0D9FF), // Solid 4
                             width: 2,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF48319D).withOpacity(0.3), // Solid 1
+                              color: const Color(0x4D48319D), // Solid 1
                               blurRadius: 15,
                               offset: const Offset(0, 5),
                             ),
@@ -301,7 +301,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         'Cập nhật thời tiết nhanh chóng & chính xác',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: const Color(0xFFEBEBF5).withOpacity(0.6), // Secondary Text Dark
+                          color: const Color(0x99EBEBF5), // Secondary Text Dark
                           fontStyle: FontStyle.italic,
                         ),
                       ),
@@ -314,20 +314,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(24.0),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1F1D47).withOpacity(0.7), // Solid 2 Glassmorphic
+                      color: const Color(0xB31F1D47), // Solid 2 Glassmorphic
                       borderRadius: BorderRadius.circular(28.0),
                       border: Border.all(
-                        color: const Color(0xFFE0D9FF).withOpacity(0.2), // Solid 4 Border
+                        color: const Color(0x33E0D9FF), // Solid 4 Border
                         width: 1.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: const Color(0x4D000000),
                           blurRadius: 30,
                           offset: const Offset(0, 15),
                         ),
                         BoxShadow(
-                          color: const Color(0xFF48319D).withOpacity(0.25), // Solid 1 purple glow
+                          color: const Color(0x4048319D), // Solid 1 purple glow
                           blurRadius: 20,
                           offset: const Offset(0, 0),
                           spreadRadius: 2,
@@ -352,7 +352,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             'Vui lòng đăng nhập để xem thông tin thời tiết',
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: const Color(0xFFEBEBF5).withOpacity(0.6), // Secondary Text Dark
+                              color: const Color(0xFFEBEBF5).withValues(alpha: 0.6), // Secondary Text Dark
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -366,7 +366,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               labelText: 'Địa chỉ Email',
                               labelStyle: GoogleFonts.poppins(
                                 fontSize: 13,
-                                color: const Color(0xFFEBEBF5).withOpacity(0.6),
+                                color: const Color(0xFFEBEBF5).withValues(alpha: 0.6),
                               ),
                               prefixIcon: const Icon(
                                 Icons.email_outlined,
@@ -379,7 +379,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: const Color(0xFFE0D9FF).withOpacity(0.15),
+                                  color: const Color(0xFFE0D9FF).withValues(alpha: 0.15),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -390,7 +390,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               filled: true,
-                              fillColor: const Color(0xFF1C1B33).withOpacity(0.5), // Linear 1 End
+                              fillColor: const Color(0xFF1C1B33).withValues(alpha: 0.5), // Linear 1 End
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -413,7 +413,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               labelText: 'Mật khẩu',
                               labelStyle: GoogleFonts.poppins(
                                 fontSize: 13,
-                                color: const Color(0xFFEBEBF5).withOpacity(0.6),
+                                color: const Color(0xFFEBEBF5).withValues(alpha: 0.6),
                               ),
                               prefixIcon: const Icon(
                                 Icons.lock_outline_rounded,
@@ -425,7 +425,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   _obscurePassword
                                       ? Icons.visibility_off_outlined
                                       : Icons.visibility_outlined,
-                                  color: const Color(0xFFEBEBF5).withOpacity(0.6),
+                                  color: const Color(0xFFEBEBF5).withValues(alpha: 0.6),
                                   size: 20,
                                 ),
                                 onPressed: () {
@@ -440,7 +440,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: const Color(0xFFE0D9FF).withOpacity(0.15),
+                                  color: const Color(0xFFE0D9FF).withValues(alpha: 0.15),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -451,7 +451,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               filled: true,
-                              fillColor: const Color(0xFF1C1B33).withOpacity(0.5), // Linear 1 End
+                              fillColor: const Color(0xFF1C1B33).withValues(alpha: 0.5), // Linear 1 End
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -472,10 +472,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: double.infinity,
                               height: 46,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1565C0).withOpacity(0.25),
+                                color: const Color(0xFF1565C0).withValues(alpha: 0.25),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: const Color(0xFF42A5F5).withOpacity(0.6),
+                                  color: const Color(0xFF42A5F5).withValues(alpha: 0.6),
                                   width: 1.5,
                                 ),
                               ),
@@ -516,18 +516,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             child: Row(children: [
-                              Expanded(child: Divider(color: Colors.white.withOpacity(0.15))),
+                              Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.15))),
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
                                 child: Text(
                                   'hoặc',
                                   style: GoogleFonts.poppins(
                                     fontSize: 12,
-                                    color: Colors.white.withOpacity(0.4),
+                                    color: Colors.white.withValues(alpha: 0.4),
                                   ),
                                 ),
                               ),
-                              Expanded(child: Divider(color: Colors.white.withOpacity(0.15))),
+                              Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.15))),
                             ]),
                           ),
 
@@ -554,7 +554,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ? []
                                     : [
                                         BoxShadow(
-                                          color: const Color(0xFFC427FB).withOpacity(0.4),
+                                          color: const Color(0xFFC427FB).withValues(alpha: 0.4),
                                           blurRadius: 12,
                                           offset: const Offset(0, 4),
                                         ),
@@ -592,7 +592,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 'Chưa có tài khoản?',
                                 style: GoogleFonts.poppins(
                                   fontSize: 13,
-                                  color: const Color(0xFFEBEBF5).withOpacity(0.6), // Secondary Text Dark
+                                  color: const Color(0xFFEBEBF5).withValues(alpha: 0.6), // Secondary Text Dark
                                 ),
                               ),
                               TextButton(
@@ -630,7 +630,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         AppConstants.university,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: const Color(0xFFEBEBF5).withOpacity(0.7),
+                          color: const Color(0xFFEBEBF5).withValues(alpha: 0.7),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -641,7 +641,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     'Phiên bản ${AppConstants.appVersion}',
                     style: GoogleFonts.poppins(
                       fontSize: 11,
-                      color: const Color(0xFFEBEBF5).withOpacity(0.5),
+                      color: const Color(0xFFEBEBF5).withValues(alpha: 0.5),
                     ),
                   ),
                 ],

@@ -69,10 +69,10 @@ class GroupPhotoHeader extends StatelessWidget {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.25),
+                    color: Colors.white.withValues(alpha: 0.25),
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: Colors.white.withOpacity(0.5), width: 2),
+                        color: Colors.white.withValues(alpha: 0.5), width: 2),
                   ),
                   child: const Icon(Icons.photo_camera_rounded,
                       size: 32, color: Colors.white),
@@ -104,7 +104,7 @@ class GroupPhotoHeader extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.35),
+                color: Colors.black.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -138,7 +138,7 @@ class MemberInfoFooter extends StatelessWidget {
         border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, -2))
         ],
@@ -153,12 +153,15 @@ class MemberInfoFooter extends StatelessWidget {
               const Icon(Icons.school_rounded,
                   size: 14, color: Color(0xFF1565C0)),
               const SizedBox(width: 6),
-              Text(
-                AppConstants.university,
-                style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1565C0)),
+              Expanded(
+                child: Text(
+                  AppConstants.university,
+                  style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1565C0)),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -169,10 +172,13 @@ class MemberInfoFooter extends StatelessWidget {
                 child: Row(
                   children: [
                     const SizedBox(width: 20),
-                    Text(
-                      '${m['name']} - ${m['id']}',
-                      style: GoogleFonts.poppins(
-                          fontSize: 11, color: Colors.grey.shade700),
+                    Expanded(
+                      child: Text(
+                        '${m['name']} - ${m['id']}',
+                        style: GoogleFonts.poppins(
+                            fontSize: 11, color: Colors.grey.shade700),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),

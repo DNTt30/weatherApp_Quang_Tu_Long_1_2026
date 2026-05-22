@@ -155,15 +155,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1F1D47).withOpacity(0.5), // Solid 2
+                          color: const Color(0xFF1F1D47).withValues(alpha: 0.5), // Solid 2
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: const Color(0xFFE0D9FF).withOpacity(0.3), // Solid 4
+                            color: const Color(0xFFE0D9FF).withValues(alpha: 0.3), // Solid 4
                             width: 2,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF48319D).withOpacity(0.3), // Solid 1
+                              color: const Color(0xFF48319D).withValues(alpha: 0.3), // Solid 1
                               blurRadius: 15,
                               offset: const Offset(0, 5),
                             ),
@@ -201,20 +201,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(24.0),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1F1D47).withOpacity(0.7), // Solid 2 Glassmorphic
+                      color: const Color(0xFF1F1D47).withValues(alpha: 0.7), // Solid 2 Glassmorphic
                       borderRadius: BorderRadius.circular(28.0),
                       border: Border.all(
-                        color: const Color(0xFFE0D9FF).withOpacity(0.2), // Solid 4 Border
+                        color: const Color(0xFFE0D9FF).withValues(alpha: 0.2), // Solid 4 Border
                         width: 1.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           blurRadius: 30,
                           offset: const Offset(0, 15),
                         ),
                         BoxShadow(
-                          color: const Color(0xFF48319D).withOpacity(0.25), // Solid 1 purple glow
+                          color: const Color(0xFF48319D).withValues(alpha: 0.25), // Solid 1 purple glow
                           blurRadius: 20,
                           offset: const Offset(0, 0),
                           spreadRadius: 2,
@@ -239,7 +239,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             'Hãy nhập đầy đủ thông tin bên dưới',
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: const Color(0xFFEBEBF5).withOpacity(0.6), // Secondary Text Dark
+                              color: const Color(0xFFEBEBF5).withValues(alpha: 0.6), // Secondary Text Dark
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -253,7 +253,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               labelText: 'Địa chỉ Email',
                               labelStyle: GoogleFonts.poppins(
                                 fontSize: 13,
-                                color: const Color(0xFFEBEBF5).withOpacity(0.6),
+                                color: const Color(0xFFEBEBF5).withValues(alpha: 0.6),
                               ),
                               prefixIcon: const Icon(
                                 Icons.email_outlined,
@@ -266,7 +266,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: const Color(0xFFE0D9FF).withOpacity(0.15),
+                                  color: const Color(0xFFE0D9FF).withValues(alpha: 0.15),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -277,7 +277,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ),
                               filled: true,
-                              fillColor: const Color(0xFF1C1B33).withOpacity(0.5), // Linear 1 End
+                              fillColor: const Color(0xFF1C1B33).withValues(alpha: 0.5), // Linear 1 End
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -299,7 +299,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               labelText: 'Tên người dùng (Username)',
                               labelStyle: GoogleFonts.poppins(
                                 fontSize: 13,
-                                color: const Color(0xFFEBEBF5).withOpacity(0.6),
+                                color: const Color(0xFFEBEBF5).withValues(alpha: 0.6),
                               ),
                               prefixIcon: const Icon(
                                 Icons.person_outline_rounded,
@@ -312,7 +312,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: const Color(0xFFE0D9FF).withOpacity(0.15),
+                                  color: const Color(0xFFE0D9FF).withValues(alpha: 0.15),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -323,7 +323,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ),
                               filled: true,
-                              fillColor: const Color(0xFF1C1B33).withOpacity(0.5), // Linear 1 End
+                              fillColor: const Color(0xFF1C1B33).withValues(alpha: 0.5), // Linear 1 End
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
@@ -346,7 +346,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               labelText: 'Mật khẩu',
                               labelStyle: GoogleFonts.poppins(
                                 fontSize: 13,
-                                color: const Color(0xFFEBEBF5).withOpacity(0.6),
+                                color: const Color(0xFFEBEBF5).withValues(alpha: 0.6),
                               ),
                               prefixIcon: const Icon(
                                 Icons.lock_outline_rounded,
@@ -358,7 +358,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   _obscurePassword
                                       ? Icons.visibility_off_outlined
                                       : Icons.visibility_outlined,
-                                  color: const Color(0xFFEBEBF5).withOpacity(0.6),
+                                  color: const Color(0xFFEBEBF5).withValues(alpha: 0.6),
                                   size: 20,
                                 ),
                                 onPressed: () {
@@ -373,7 +373,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: const Color(0xFFE0D9FF).withOpacity(0.15),
+                                  color: const Color(0xFFE0D9FF).withValues(alpha: 0.15),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -384,7 +384,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ),
                               filled: true,
-                              fillColor: const Color(0xFF1C1B33).withOpacity(0.5), // Linear 1 End
+                              fillColor: const Color(0xFF1C1B33).withValues(alpha: 0.5), // Linear 1 End
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -407,7 +407,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               labelText: 'Xác nhận mật khẩu',
                               labelStyle: GoogleFonts.poppins(
                                 fontSize: 13,
-                                color: const Color(0xFFEBEBF5).withOpacity(0.6),
+                                color: const Color(0xFFEBEBF5).withValues(alpha: 0.6),
                               ),
                               prefixIcon: const Icon(
                                 Icons.lock_clock_outlined,
@@ -419,7 +419,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   _obscureConfirmPassword
                                       ? Icons.visibility_off_outlined
                                       : Icons.visibility_outlined,
-                                  color: const Color(0xFFEBEBF5).withOpacity(0.6),
+                                  color: const Color(0xFFEBEBF5).withValues(alpha: 0.6),
                                   size: 20,
                                 ),
                                 onPressed: () {
@@ -434,7 +434,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: const Color(0xFFE0D9FF).withOpacity(0.15),
+                                  color: const Color(0xFFE0D9FF).withValues(alpha: 0.15),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -445,7 +445,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ),
                               filled: true,
-                              fillColor: const Color(0xFF1C1B33).withOpacity(0.5), // Linear 1 End
+                              fillColor: const Color(0xFF1C1B33).withValues(alpha: 0.5), // Linear 1 End
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -482,7 +482,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     ? []
                                     : [
                                         BoxShadow(
-                                          color: const Color(0xFFC427FB).withOpacity(0.4),
+                                          color: const Color(0xFFC427FB).withValues(alpha: 0.4),
                                           blurRadius: 12,
                                           offset: const Offset(0, 4),
                                         ),
@@ -520,7 +520,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 'Đã có tài khoản?',
                                 style: GoogleFonts.poppins(
                                   fontSize: 13,
-                                  color: const Color(0xFFEBEBF5).withOpacity(0.6), // Secondary Text Dark
+                                  color: const Color(0xFFEBEBF5).withValues(alpha: 0.6), // Secondary Text Dark
                                 ),
                               ),
                               TextButton(
@@ -558,7 +558,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         AppConstants.university,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: const Color(0xFFEBEBF5).withOpacity(0.7),
+                          color: const Color(0xFFEBEBF5).withValues(alpha: 0.7),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -569,7 +569,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     'Phiên bản ${AppConstants.appVersion}',
                     style: GoogleFonts.poppins(
                       fontSize: 11,
-                      color: const Color(0xFFEBEBF5).withOpacity(0.5),
+                      color: const Color(0xFFEBEBF5).withValues(alpha: 0.5),
                     ),
                   ),
                 ],

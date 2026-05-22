@@ -10,6 +10,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'service/auth_service.dart';
+import 'service/weather_data_manager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,7 @@ Future<void> main() async {
   runApp(MyApp());
 }
 class MyApp extends StatelessWidget {
+  MyApp({super.key});
   final AuthService _authService = AuthService();
 
   @override
@@ -68,6 +70,22 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    await WeatherDataManager().loadAllData();
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   // Tiêu đề AppBar theo từng tab
   final List<String> _titles = ['Home', 'Forecast', 'More'];
@@ -85,6 +103,22 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF1C1B33),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(color: Color(0xFFC427FB)),
+              const SizedBox(height: 16),
+              Text('Đang lấy dữ liệu thời tiết...', style: GoogleFonts.poppins(color: Colors.white70)),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF1C1B33),
       // ── AppBar ──────────────────────────────────────────────
@@ -108,49 +142,6 @@ class _MainShellState extends State<MainShell> {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.white),
-            tooltip: 'Đăng xuất',
-            onPressed: () async {
-              bool? confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text(
-                    'Đăng xuất',
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-                  ),
-                  content: Text(
-                    'Bạn có chắc chắn muốn đăng xuất không?',
-                    style: GoogleFonts.poppins(),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: Text(
-                        'Hủy',
-                        style: GoogleFonts.poppins(color: Colors.grey),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: Text(
-                        'Đăng xuất',
-                        style: GoogleFonts.poppins(
-                          color: const Color(0xFFC62828),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-              if (confirm == true) {
-                await AuthService().signOut();
-              }
-            },
-          ),
-        ],
       ),
       // ── 3 màn hình dùng IndexedStack (giữ state) ────────────
       body: IndexedStack(

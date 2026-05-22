@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/forecast.dart';
 import '../models/weather.dart';
 import '../service/settings_service.dart';
+import '../service/weather_data_manager.dart';
 
 // ============================================================
 // ContentScreen — Quang phụ trách
@@ -13,30 +14,21 @@ class ContentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ── Mock Weather data với đầy đủ thuộc tính ──────────────
-    final Weather currentWeather = Weather(
-      city: 'Hà Nội', temperature: 32.5, status: 'Sunny',
-      humidity: 70.0, isRaining: false,
-      windSpeed: 12.0, uvIndex: 7, icon: 'sunny',
-    );
+    final dataManager = WeatherDataManager();
+    
+    if (dataManager.allCitiesData.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-    // ── Dự báo theo ngày ─────────────────────────────────────
-    final List<Forecast> forecasts = [
-      Forecast(id:'f1', dateTime:'Thứ Hai',  minTemp:25.0, maxTemp:32.0, rainProbability:10, description:'Nắng đẹp, ít mây'),
-      Forecast(id:'f2', dateTime:'Thứ Ba',   minTemp:24.0, maxTemp:28.0, rainProbability:80, description:'Mưa rào, sấm nhẹ'),
-      Forecast(id:'f3', dateTime:'Thứ Tư',   minTemp:25.0, maxTemp:30.0, rainProbability:30, description:'Nhiều mây'),
-      Forecast(id:'f4', dateTime:'Thứ Năm',  minTemp:23.0, maxTemp:29.0, rainProbability:10, description:'Nắng nhẹ'),
-      Forecast(id:'f5', dateTime:'Thứ Sáu',  minTemp:26.0, maxTemp:31.0, rainProbability:50, description:'Chiều mưa'),
-    ];
+    // Lấy thành phố đầu tiên (Hà Nội) làm mặc định cho trang hiển thị chi tiết
+    final Map<String, dynamic> firstCity = dataManager.allCitiesData[0];
+    final Weather currentWeather = firstCity['weather'];
+    final List<Forecast> forecasts = firstCity['forecasts'];
 
-    // ── Mock so sánh thành phố ────────────────────────────────
-    final List<Weather> cityWeathers = [
-      Weather(city:'Hà Nội',       temperature:32.5, status:'Sunny',  humidity:70, isRaining:false, windSpeed:12, uvIndex:7),
-      Weather(city:'Đà Nẵng',     temperature:29.0, status:'Cloudy', humidity:85, isRaining:false, windSpeed:18, uvIndex:4),
-      Weather(city:'Hồ Chí Minh', temperature:35.0, status:'Sunny',  humidity:60, isRaining:false, windSpeed:8,  uvIndex:9),
-      Weather(city:'Hải Phòng',   temperature:28.0, status:'Rainy',  humidity:90, isRaining:true,  windSpeed:22, uvIndex:2),
-      Weather(city:'Cần Thơ',     temperature:33.0, status:'Cloudy', humidity:75, isRaining:false, windSpeed:10, uvIndex:6),
-    ];
+    // Danh sách weather của tất cả các thành phố để so sánh
+    final List<Weather> cityWeathers = dataManager.allCitiesData
+        .map((e) => e['weather'] as Weather)
+        .toList();
 
     return Container(
       decoration: const BoxDecoration(
