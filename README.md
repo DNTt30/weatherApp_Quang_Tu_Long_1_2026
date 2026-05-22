@@ -17,6 +17,13 @@ Weather Forecast là ứng dụng Flutter cho phép người dùng xem thông ti
   - **Footer**: 3 cột (Kết nối, Trang liên quan, Chính sách) với các liên kết xã hội
   - **Navigation**: Sau khi submit form, người dùng được chuyển đến màn hình ứng dụng chính
 
+#### Các file Dart cần thiết cho phần màn hình Home hiện tại
+- `lib/main.dart`
+- `lib/screens/home_screen.dart`
+- `lib/models/city.dart`
+- `lib/widgets/city_card.dart`
+- `lib/widgets/hourly_forecast_card.dart`
+
 ### 2. **Màn hình chính (Screen)**
 - `lib/screen.dart`: Layout chính với BottomNavigationBar 3 tab
   - **Tab Home**: Hiển thị thông tin thời tiết hiện tại
