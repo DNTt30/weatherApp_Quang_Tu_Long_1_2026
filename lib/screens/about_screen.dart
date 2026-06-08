@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../service/settings_service.dart';
+import 'generics_lab_screen.dart';
+import 'student_lab_screen.dart';
 
 // ============================================================
 // AboutScreen — Tú phụ trách (Cài đặt, Thông tin, Đăng xuất)
@@ -348,6 +350,100 @@ class AboutScreen extends StatelessWidget {
                 },
               ),
             ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        
+        // Nhóm Thực hành
+        _sectionLabel('Bài Tập / Thực Hành'),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const GenericsLabScreen()),
+              );
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: Column(
+              children: [
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const GenericsLabScreen()),
+                    );
+                  },
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.greenAccent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.science_rounded,
+                              size: 18, color: Colors.greenAccent),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text('Bài Thực Hành 6+ (Generics)',
+                              style: GoogleFonts.poppins(
+                                  color: Colors.greenAccent,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                        const Icon(Icons.chevron_right_rounded, color: Colors.white38, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+                Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const StudentLabScreen()),
+                    );
+                  },
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.blueAccent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.school,
+                              size: 18, color: Colors.blueAccent),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text('Ứng dụng Sinh Viên (Modal)',
+                              style: GoogleFonts.poppins(
+                                  color: Colors.blueAccent,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                        const Icon(Icons.chevron_right_rounded, color: Colors.white38, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 24),

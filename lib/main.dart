@@ -11,6 +11,9 @@ import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'service/auth_service.dart';
 import 'service/weather_data_manager.dart';
+import 'service/firestore_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -153,6 +156,87 @@ class _MainShellState extends State<MainShell> {
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
       ),
+      // THỰC HÀNH CRUD: Nút test CRUD được thêm vào main.dart
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFFC427FB),
+        onPressed: () => _showCrudTestDialog(context),
+        child: const Icon(Icons.data_object, color: Colors.white),
+      ),
+    );
+  }
+
+  // Dialog thực hành CRUD trong main.dart
+  void _showCrudTestDialog(BuildContext context) {
+    final FirestoreService firestoreService = FirestoreService();
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF2E335A),
+          title: Text('Test CRUD Firebase', style: GoogleFonts.poppins(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton(
+                onPressed: () async {
+                  // [C]reate
+                  await firestoreService.addCity({
+                    'name': 'Hanoi Test',
+                    'temperature': 35,
+                    'status': 'Sunny',
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Create: Đã thêm Hanoi Test!')));
+                },
+                child: const Text('1. Create (Thêm Dữ Liệu)'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  // [R]ead
+                  final snapshot = await firestoreService.cities.limit(1).get();
+                  if (snapshot.docs.isNotEmpty) {
+                    final data = snapshot.docs.first.data() as Map<String, dynamic>;
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Read: Thành phố đầu tiên là ${data['name']}')));
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Read: Chưa có dữ liệu')));
+                  }
+                },
+                child: const Text('2. Read (Đọc Dữ Liệu)'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  // [U]pdate
+                  final snapshot = await firestoreService.cities.limit(1).get();
+                  if (snapshot.docs.isNotEmpty) {
+                    final docId = snapshot.docs.first.id;
+                    await firestoreService.updateCity(docId, {'status': 'Rainy Updated'});
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Update: Đã cập nhật trạng thái!')));
+                  }
+                },
+                child: const Text('3. Update (Cập nhật Dữ Liệu)'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  // [D]elete
+                  final snapshot = await firestoreService.cities.limit(1).get();
+                  if (snapshot.docs.isNotEmpty) {
+                    final docId = snapshot.docs.first.id;
+                    await firestoreService.deleteCity(docId);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Delete: Đã xóa thành công!')));
+                  }
+                },
+                child: const Text('4. Delete (Xóa Dữ Liệu)'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Đóng', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     );
   }
 }
