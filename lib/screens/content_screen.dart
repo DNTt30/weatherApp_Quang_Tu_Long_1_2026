@@ -212,9 +212,50 @@ class _ContentScreenState extends State<ContentScreen> {
                 runSpacing: 8,
                 children: searches.map((s) {
                   return InkWell(
-                    onTap: () {
-                      // Trigger search
-                      FirestoreService().saveSearchHistory(s['cityName']);
+                    onTap: () async {
+                      final String cityName = s['cityName'];
+                      final double? lat = s['lat'];
+                      final double? lon = s['lon'];
+                      
+                      if (lat != null && lon != null) {
+                        setState(() {
+                          _isSearching = true;
+                        });
+                        
+                        try {
+                          final apiService = ApiService();
+                          final weatherResult = await apiService.fetchWeatherData(lat, lon, cityName);
+                          
+                          final Weather weather = weatherResult['weather'];
+                          final List<Forecast> forecasts = weatherResult['forecasts'];
+                          
+                          final firestore = FirestoreService();
+                          await firestore.saveSearchHistory(cityName, lat: lat, lon: lon);
+                          
+                          final dataManager = WeatherDataManager();
+                          
+                          // Cập nhật bộ nhớ đệm
+                          dataManager.allCitiesData.removeWhere((element) => element['city'] == cityName);
+                          dataManager.allCitiesData.insert(0, {
+                            'city': cityName,
+                            'lat': lat,
+                            'lon': lon,
+                            'weather': weather,
+                            'forecasts': forecasts,
+                          });
+                          
+                          // Cập nhật các vùng lân cận
+                          await dataManager.loadAllData();
+                        } catch (e) {
+                          // ignore
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _isSearching = false;
+                            });
+                          }
+                        }
+                      }
                     },
                     borderRadius: BorderRadius.circular(20),
                     child: Container(

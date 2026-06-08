@@ -71,8 +71,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void _selectCity(int index) {
     setState(() => _selectedCityIndex = index);
     _animCtrl.forward(from: 0);
-    // Lưu lịch sử xem thành phố
-    firestoreService.saveSearchHistory(_cities[index].name);
+    // Lưu lịch sử xem thành phố kèm tọa độ để hệ thống gợi ý lân cận hoạt động
+    firestoreService.saveSearchHistory(
+      _cities[index].name,
+      lat: _cities[index].latitude,
+      lon: _cities[index].longitude,
+    );
   }
 
   void _toggleFavorite(int index) {
