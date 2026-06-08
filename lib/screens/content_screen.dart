@@ -33,6 +33,10 @@ class _ContentScreenState extends State<ContentScreen> {
     return ValueListenableBuilder<String>(
       valueListenable: WeatherDataManager.activeCityName,
       builder: (context, activeName, _) {
+        if (dataManager.allCitiesData.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
         // Lấy thành phố hoạt động làm mặc định cho trang hiển thị chi tiết
         Map<String, dynamic> activeCity = dataManager.allCitiesData.firstWhere(
           (element) => element['city'].toString().toLowerCase() == activeName.toLowerCase(),
@@ -210,6 +214,12 @@ class _ContentScreenState extends State<ContentScreen> {
                 
               } catch (e) {
                 // handle error silently or show snackbar
+              }
+            } else {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Không tìm thấy tỉnh/thành phố này tại Việt Nam')),
+                );
               }
             }
             

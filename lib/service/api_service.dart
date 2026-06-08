@@ -16,12 +16,18 @@ class ApiService {
         final data = json.decode(response.body);
         if (data['results'] != null && data['results'].isNotEmpty) {
           final result = data['results'][0];
-          return {
-            'name': result['name'],
-            'country': result['country'] ?? '',
-            'lat': result['latitude'],
-            'lon': result['longitude'],
-          };
+          final String country = result['country'] ?? '';
+          final String countryLower = country.toLowerCase();
+          
+          // Chỉ chấp nhận các tỉnh thành phố thuộc Việt Nam
+          if (countryLower.contains('vietnam') || countryLower.contains('việt nam') || countryLower.contains('viet nam')) {
+            return {
+              'name': result['name'],
+              'country': country,
+              'lat': result['latitude'],
+              'lon': result['longitude'],
+            };
+          }
         }
       }
       return null;

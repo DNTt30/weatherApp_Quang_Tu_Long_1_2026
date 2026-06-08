@@ -123,6 +123,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return ValueListenableBuilder<String>(
       valueListenable: WeatherDataManager.activeCityName,
       builder: (context, activeName, _) {
+        if (_dataManager.allCitiesData.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
         // Tìm dữ liệu thời tiết cho thành phố đang hoạt động
         int selectedIndex = _dataManager.allCitiesData.indexWhere(
           (element) => element['city'].toString().toLowerCase() == activeName.toLowerCase(),
@@ -282,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               } else {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Không tìm thấy thành phố này')),
+                    const SnackBar(content: Text('Không tìm thấy tỉnh/thành phố này tại Việt Nam')),
                   );
                 }
               }
