@@ -286,7 +286,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     required bool isLightMode,
   }) {
     return Container(
-      height: 110,
+      height: 118,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -324,7 +324,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(14.0),
+            padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -355,6 +355,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   children: [
                     Text(
                       title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -363,6 +365,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     ),
                     Text(
                       subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.poppins(
                         fontSize: 9,
                         color: isLightMode ? Colors.black54 : Colors.white70,
