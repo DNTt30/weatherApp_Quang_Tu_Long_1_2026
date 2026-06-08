@@ -27,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   final Set<String> _favoriteCities = {};
   bool _isSearching = false;
   final TextEditingController _searchCtrl = TextEditingController();
+  List<Map<String, dynamic>> _suggestions = [];
 
   @override
   void initState() {
@@ -176,6 +177,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
                           child: Column(children: [
                             _buildHomeSearchBar(),
+                            _buildSuggestionsList(),
                             _buildQuickSelectChips(currentCities, activeName),
                             _buildMainCard(weather, selectedCity, isCelsius),
                             const SizedBox(height: 20),
@@ -207,6 +209,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       child: TextField(
         controller: _searchCtrl,
         style: GoogleFonts.poppins(color: SettingsService.textColor),
+        onChanged: (value) async {
+          final query = value.trim();
+          if (query.length >= 2) {
+            final list = await ApiService().geocodeSuggestions(query);
+            if (mounted) {
+              setState(() {
+                _suggestions = list;
+              });
+            }
+          } else {
+            if (mounted && _suggestions.isNotEmpty) {
+              setState(() {
+                _suggestions = [];
+              });
+            }
+          }
+        },
         decoration: InputDecoration(
           hintText: 'Tìm thành phố trực tiếp...',
           hintStyle: GoogleFonts.poppins(color: SettingsService.textMutedColor),
@@ -283,6 +302,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 await _dataManager.loadAllData();
                 WeatherDataManager.activeCityName.value = cityName;
                 _searchCtrl.clear();
+                setState(() {
+                  _suggestions = [];
+                });
               } else {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -305,6 +327,84 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             }
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildSuggestionsList() {
+    if (_suggestions.isEmpty) return const SizedBox.shrink();
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: SettingsService.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: SettingsService.cardBorderColor),
+      ),
+      child: Column(
+        children: _suggestions.map((suggestion) {
+          final String name = suggestion['name'];
+          final String admin1 = suggestion['admin1'];
+          final String displayName = admin1.isNotEmpty ? '$name ($admin1)' : name;
+          
+          return ListTile(
+            leading: const Icon(Icons.location_on, color: Color(0xFFC427FB), size: 18),
+            title: Text(
+              displayName,
+              style: GoogleFonts.poppins(color: SettingsService.textColor, fontSize: 13),
+            ),
+            onTap: () async {
+              final String selectedName = suggestion['name'];
+              final double lat = suggestion['lat'];
+              final double lon = suggestion['lon'];
+              
+              setState(() {
+                _suggestions = [];
+                _isSearching = true;
+              });
+              _searchCtrl.clear();
+              
+              try {
+                final apiService = ApiService();
+                final weatherResult = await apiService.fetchWeatherData(lat, lon, selectedName);
+                final Weather weather = weatherResult['weather'];
+                final List<Forecast> forecasts = weatherResult['forecasts'];
+                
+                final firestore = FirestoreService();
+                await firestore.saveCity(selectedName, {
+                  'name': selectedName,
+                  'country': 'Vietnam',
+                  'latitude': lat,
+                  'longitude': lon,
+                });
+                
+                await firestore.saveWeather(selectedName, weather.toMap());
+                await firestore.saveForecast(selectedName, forecasts.map((e) => e.toMap()).toList());
+                await firestore.saveSearchHistory(selectedName, lat: lat, lon: lon);
+                
+                _dataManager.allCitiesData.removeWhere((element) => element['city'].toString().toLowerCase() == selectedName.toLowerCase());
+                _dataManager.allCitiesData.insert(0, {
+                  'city': selectedName,
+                  'lat': lat,
+                  'lon': lon,
+                  'weather': weather,
+                  'forecasts': forecasts,
+                });
+                
+                await _dataManager.loadAllData();
+                WeatherDataManager.activeCityName.value = selectedName;
+              } catch (e) {
+                // error
+              } finally {
+                if (mounted) {
+                  setState(() {
+                    _isSearching = false;
+                  });
+                }
+              }
+            },
+          );
+        }).toList(),
       ),
     );
   }

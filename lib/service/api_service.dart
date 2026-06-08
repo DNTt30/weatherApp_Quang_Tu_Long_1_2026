@@ -36,6 +36,38 @@ class ApiService {
     }
   }
 
+  // Lấy danh sách các tỉnh/thành phố gợi ý thuộc Việt Nam
+  Future<List<Map<String, dynamic>>> geocodeSuggestions(String query) async {
+    if (query.trim().length < 2) return [];
+    final url = Uri.parse('$_geocodingUrl?name=${Uri.encodeComponent(query)}&count=10&language=en&format=json');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['results'] != null && data['results'].isNotEmpty) {
+          final List<Map<String, dynamic>> list = [];
+          for (var item in data['results']) {
+            final String country = item['country'] ?? '';
+            final String countryLower = country.toLowerCase();
+            if (countryLower.contains('vietnam') || countryLower.contains('việt nam') || countryLower.contains('viet nam')) {
+              list.add({
+                'name': item['name'],
+                'country': country,
+                'lat': item['latitude'],
+                'lon': item['longitude'],
+                'admin1': item['admin1'] ?? '', // Tên tỉnh/vùng hành chính
+              });
+            }
+          }
+          return list;
+        }
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
   // Lấy dữ liệu thời tiết và dự báo tổng hợp từ Open-Meteo
   Future<Map<String, dynamic>> fetchWeatherData(double lat, double lon, String cityName) async {
     final url = Uri.parse(
