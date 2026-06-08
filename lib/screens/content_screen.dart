@@ -6,6 +6,7 @@ import '../service/settings_service.dart';
 import '../service/weather_data_manager.dart';
 import '../service/firestore_service.dart';
 import '../service/api_service.dart';
+import '../main.dart';
 
 // ============================================================
 // ContentScreen — Long phụ trách
@@ -29,75 +30,84 @@ class _ContentScreenState extends State<ContentScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Lấy thành phố đầu tiên (Hà Nội) làm mặc định cho trang hiển thị chi tiết
-    final Map<String, dynamic> firstCity = dataManager.allCitiesData[0];
-    final Weather currentWeather = firstCity['weather'];
-    final List<Forecast> forecasts = firstCity['forecasts'];
+    return ValueListenableBuilder<String>(
+      valueListenable: WeatherDataManager.activeCityName,
+      builder: (context, activeName, _) {
+        // Lấy thành phố hoạt động làm mặc định cho trang hiển thị chi tiết
+        Map<String, dynamic> activeCity = dataManager.allCitiesData.firstWhere(
+          (element) => element['city'].toString().toLowerCase() == activeName.toLowerCase(),
+          orElse: () => dataManager.allCitiesData[0],
+        );
+        
+        final Weather currentWeather = activeCity['weather'];
+        final List<Forecast> forecasts = activeCity['forecasts'];
 
-    // Danh sách weather của tất cả các thành phố để so sánh
-    final List<Weather> cityWeathers = dataManager.allCitiesData
-        .map((e) => e['weather'] as Weather)
-        .toList();
+        // Danh sách weather của tất cả các thành phố để so sánh
+        final List<Weather> cityWeathers = dataManager.allCitiesData
+            .map((e) => e['weather'] as Weather)
+            .toList();
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: SettingsService.isLightMode,
-      builder: (context, isLightMode, _) {
-        return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter, end: Alignment.bottomCenter,
-              colors: [SettingsService.bgGradientTop, SettingsService.bgGradientBottom],
-            ),
-          ),
-          child: ValueListenableBuilder<bool>(
-            valueListenable: SettingsService.isCelsius,
-            builder: (context, isCelsius, _) {
-              return Column(children: [
-            _buildSearchBar(),
-            _buildRecentSearches(),
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-                child: Column(children: [
-                  // Weather warning card
-                  if (currentWeather.getWarning() != null) ...[
-                    _buildWarningCard(currentWeather),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // Weather stats (humidity, wind, UV)
-                  _buildWeatherStats(currentWeather),
-                  const SizedBox(height: 20),
-
-                  // Hourly forecast
-                  _sectionLabel('Dự Báo Theo Giờ'),
-                  const SizedBox(height: 10),
-                  _buildHourlyRow(isCelsius),
-                  const SizedBox(height: 20),
-
-                  // 5-day forecast cards
-                  _sectionLabel('Dự Báo Chi Tiết 5 Ngày'),
-                  const SizedBox(height: 10),
-                  ...forecasts.map((fo) => _buildForecastCard(fo, isCelsius)),
-
-                  const SizedBox(height: 20),
-
-                  // City comparison table
-                  _sectionLabel('So Sánh Thành Phố'),
-                  const SizedBox(height: 10),
-                  _buildComparisonTable(cityWeathers, isCelsius),
-
-                  const SizedBox(height: 4),
-                ]),
+        return ValueListenableBuilder<bool>(
+          valueListenable: SettingsService.isLightMode,
+          builder: (context, isLightMode, _) {
+            return Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  colors: [SettingsService.bgGradientTop, SettingsService.bgGradientBottom],
+                ),
               ),
-            ),
-            _buildFooter(),
-          ]);
-        }
-      ),
-    );
-    },
+              child: ValueListenableBuilder<bool>(
+                valueListenable: SettingsService.isCelsius,
+                builder: (context, isCelsius, _) {
+                  return Column(children: [
+                    _buildSearchBar(),
+                    _buildRecentSearches(),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                        child: Column(children: [
+                          // Weather warning card
+                          if (currentWeather.getWarning() != null) ...[
+                            _buildWarningCard(currentWeather),
+                            const SizedBox(height: 16),
+                          ],
+
+                          // Weather stats (humidity, wind, UV)
+                          _buildWeatherStats(currentWeather),
+                          const SizedBox(height: 20),
+
+                          // Hourly forecast
+                          _sectionLabel('Dự Báo Theo Giờ'),
+                          const SizedBox(height: 10),
+                          _buildHourlyRow(isCelsius),
+                          const SizedBox(height: 20),
+
+                          // 5-day forecast cards
+                          _sectionLabel('Dự Báo Chi Tiết 5 Ngày'),
+                          const SizedBox(height: 10),
+                          ...forecasts.map((fo) => _buildForecastCard(fo, isCelsius)),
+
+                          const SizedBox(height: 20),
+
+                          // City comparison table
+                          _sectionLabel('So Sánh Thành Phố'),
+                          const SizedBox(height: 10),
+                          _buildComparisonTable(cityWeathers, isCelsius),
+
+                          const SizedBox(height: 4),
+                        ]),
+                      ),
+                    ),
+                    _buildFooter(),
+                  ]);
+                },
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -111,6 +121,16 @@ class _ContentScreenState extends State<ContentScreen> {
           hintText: 'Tìm kiếm thành phố...',
           hintStyle: GoogleFonts.poppins(color: SettingsService.textMutedColor),
           prefixIcon: Icon(Icons.search, color: SettingsService.textMutedColor),
+          suffixIcon: _isSearching
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: Padding(
+                    padding: EdgeInsets.all(12.0),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFC427FB)),
+                  ),
+                )
+              : null,
           filled: true,
           fillColor: SettingsService.cardColor,
           border: OutlineInputBorder(
@@ -165,7 +185,7 @@ class _ContentScreenState extends State<ContentScreen> {
                 final dataManager = WeatherDataManager();
                 
                 // Xóa cũ nếu đã tồn tại
-                dataManager.allCitiesData.removeWhere((element) => element['city'] == cityName);
+                dataManager.allCitiesData.removeWhere((element) => element['city'].toString().toLowerCase() == cityName.toLowerCase());
                 
                 // Đẩy lên đầu danh sách
                 dataManager.allCitiesData.insert(0, {
@@ -175,6 +195,18 @@ class _ContentScreenState extends State<ContentScreen> {
                   'weather': weather,
                   'forecasts': forecasts,
                 });
+
+                // Cập nhật lân cận và đổi activeCityName
+                await dataManager.loadAllData();
+                WeatherDataManager.activeCityName.value = cityName;
+                
+                // Tự động chuyển về trang chủ (Home Screen)
+                if (mounted) {
+                  final mainShell = context.findAncestorStateOfType<MainShellState>();
+                  if (mainShell != null) {
+                    mainShell.setIndex(0);
+                  }
+                }
                 
               } catch (e) {
                 // handle error silently or show snackbar
@@ -235,7 +267,7 @@ class _ContentScreenState extends State<ContentScreen> {
                           final dataManager = WeatherDataManager();
                           
                           // Cập nhật bộ nhớ đệm
-                          dataManager.allCitiesData.removeWhere((element) => element['city'] == cityName);
+                          dataManager.allCitiesData.removeWhere((element) => element['city'].toString().toLowerCase() == cityName.toLowerCase());
                           dataManager.allCitiesData.insert(0, {
                             'city': cityName,
                             'lat': lat,
@@ -246,6 +278,15 @@ class _ContentScreenState extends State<ContentScreen> {
                           
                           // Cập nhật các vùng lân cận
                           await dataManager.loadAllData();
+                          WeatherDataManager.activeCityName.value = cityName;
+
+                          // Tự động chuyển về trang chủ (Home Screen)
+                          if (mounted) {
+                            final mainShell = context.findAncestorStateOfType<MainShellState>();
+                            if (mainShell != null) {
+                              mainShell.setIndex(0);
+                            }
+                          }
                         } catch (e) {
                           // ignore
                         } finally {

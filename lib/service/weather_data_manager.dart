@@ -19,6 +19,9 @@ class WeatherDataManager {
   // Dữ liệu thời tiết của các khu vực lân cận được đề xuất
   List<Map<String, dynamic>> recommendedNearbyData = [];
 
+  // Thành phố đang được hiển thị hoạt động toàn cục
+  static final ValueNotifier<String> activeCityName = ValueNotifier<String>('Hà Nội');
+
   final List<Map<String, dynamic>> _baseCities = [
     {'city': 'Hà Nội', 'lat': 21.0285, 'lon': 105.8542},
     {'city': 'Đà Nẵng', 'lat': 16.0544, 'lon': 108.2022},
@@ -90,6 +93,9 @@ class WeatherDataManager {
           
           // Thêm lên đầu danh sách
           citiesToLoad.insert(0, lastSearchCity);
+
+          // Cập nhật thành phố hoạt động toàn cục sang lịch sử mới nhất
+          activeCityName.value = lastSearch['cityName'];
         }
       }
     } catch (e) {

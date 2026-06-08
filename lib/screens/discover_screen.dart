@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../service/settings_service.dart';
 import '../service/weather_data_manager.dart';
 import '../service/firestore_service.dart';
+import '../service/api_service.dart';
 import '../models/weather.dart';
+import '../models/forecast.dart';
 import '../main.dart';
 
 class DiscoverScreen extends StatefulWidget {
@@ -16,6 +18,22 @@ class DiscoverScreen extends StatefulWidget {
 class _DiscoverScreenState extends State<DiscoverScreen> {
   final WeatherDataManager _dataManager = WeatherDataManager();
   bool _isRecommending = false;
+
+  String _statusEmoji(String status) {
+    switch (status.toLowerCase()) {
+      case 'sunny':
+      case 'nắng đẹp':
+      case 'trời trong':
+        return '☀️';
+      case 'rainy':
+      case 'mưa vừa':
+      case 'mưa rào':
+      case 'giông bão':
+        return '🌧️';
+      default:
+        return '⛅';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -541,7 +559,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  // Thẻ "Khu vực quan tâm gần đây" -> Navigate to Home Details on Click
+  // Thẻ "Khu vực quan tâm gần đây" -> Opens direct weather preview on click (1-tap optimization)
   Widget _buildContinueTrackingSection(
     bool isLightMode,
     Color cardBg,
@@ -554,7 +572,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     // Lấy thành phố tìm kiếm gần nhất (phần tử đầu tiên) làm đích đến du lịch
     final latestSearch = _dataManager.allCitiesData.first;
     final String cityName = latestSearch['city'];
+    final double lat = latestSearch['lat'];
+    final double lon = latestSearch['lon'];
     final Weather w = latestSearch['weather'];
+    final List<Forecast> forecasts = latestSearch['forecasts'];
 
     // Lấy link ảnh minh họa cho vùng miền
     final String imgUrl = _getCityImageUrl(cityName);
@@ -573,11 +594,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         const SizedBox(height: 10),
         GestureDetector(
           onTap: () {
-            // Chuyển sang tab Home (index 0) để người dùng xem chi tiết thành phố này
-            final mainShell = context.findAncestorStateOfType<MainShellState>();
-            if (mainShell != null) {
-              mainShell.setIndex(0); // Switch to Home Tab
-            }
+            // Mở Bottom Sheet xem chi tiết trực tiếp (Tránh thao tác chuyển trang phức tạp)
+            _showWeatherDetailSheet(context, cityName, w, forecasts, null, lat, lon, isLightMode);
           },
           child: Container(
             width: double.infinity,
@@ -660,7 +678,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Nhấn để xem chi tiết thời tiết tại màn hình chính',
+                              'Nhấn để xem nhanh thời tiết và dự báo chi tiết',
                               style: GoogleFonts.poppins(
                                 fontSize: 10,
                                 color: textMutedColor,
@@ -682,21 +700,21 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             color: const Color(0xFFC427FB),
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
-                          ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      ],
+      ),
+    ],
     );
   }
 
-  // Thẻ "Thời tiết các khu vực lân cận" -> Click triggers reloading weather for that city and moving to Home
+  // Thẻ "Thời tiết các khu vực lân cận" -> Opens direct weather preview on click (1-tap optimization)
   Widget _buildNearbyRecommendationsSection(
     bool isLightMode,
     Color cardBg,
@@ -730,36 +748,15 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           children: _dataManager.recommendedNearbyData.map((nr) {
             final String name = nr['city'];
             final double dist = nr['distance'] ?? 0.0;
+            final double lat = nr['lat'];
+            final double lon = nr['lon'];
             final Weather w = nr['weather'];
+            final List<Forecast> forecasts = nr['forecasts'];
             
             return GestureDetector(
-              onTap: () async {
-                final mainShell = context.findAncestorStateOfType<MainShellState>();
-                setState(() {
-                  _isRecommending = true;
-                });
-                
-                try {
-                  // Lưu vào lịch sử tìm kiếm để cập nhật danh sách
-                  final firestore = FirestoreService();
-                  await firestore.saveSearchHistory(name, lat: nr['lat'], lon: nr['lon']);
-                  
-                  // Load lại dữ liệu
-                  await _dataManager.loadAllData();
-                  
-                  // Quay về trang chủ
-                  if (mounted && mainShell != null) {
-                    mainShell.setIndex(0); // Switch to Home tab
-                  }
-                } catch (e) {
-                  // ignore
-                } finally {
-                  if (mounted) {
-                    setState(() {
-                      _isRecommending = false;
-                    });
-                  }
-                }
+              onTap: () {
+                // Hiển thị Bottom Sheet chi tiết thời tiết vùng lân cận lập tức (chỉ 1 click)
+                _showWeatherDetailSheet(context, name, w, forecasts, dist, lat, lon, isLightMode);
               },
               child: Container(
                 margin: const EdgeInsets.only(bottom: 12),
@@ -862,149 +859,527 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  // ── QUICK ICONS POPUPS ───────────────────────────────────────────────────
-  void _handleQuickIconTap(BuildContext context, String type, String label, bool isLightMode) {
-    String dialogTitle = label;
-    Widget dialogContent;
-
-    switch (type) {
-      case 'storm':
-        dialogContent = Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.cyclone_rounded, color: Colors.redAccent, size: 48),
-            const SizedBox(height: 14),
-            Text(
-              'Bản đồ Theo dõi Bão Biển Đông',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: SettingsService.textColor),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Hiện tại không có cơn bão hoặc áp thấp nhiệt đới nào đang hoạt động trên vùng biển Việt Nam. Thời tiết biển ổn định.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 12, color: SettingsService.textDimColor),
-            ),
-          ],
-        );
-        break;
-      case 'humidity':
-        dialogContent = Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.water_drop_rounded, color: Colors.blueAccent, size: 48),
-            const SizedBox(height: 14),
-            Text(
-              'Tư vấn độ ẩm không khí',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: SettingsService.textColor),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Độ ẩm lý tưởng cho sức khỏe là từ 50% - 60%. Nếu độ ẩm vượt quá 80%, hãy sử dụng chế độ Dry của điều hòa để hút ẩm bảo vệ đường hô hấp.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 12, color: SettingsService.textDimColor),
-            ),
-          ],
-        );
-        break;
-      case 'wind':
-        dialogContent = Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.wind_power_rounded, color: Colors.teal, size: 48),
-            const SizedBox(height: 14),
-            Text(
-              'Thông tin gió & Sóng biển',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: SettingsService.textColor),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Gió cấp 2-3 (nhẹ nhàng). Thích hợp cho các hoạt động thể thao ngoài trời như thả diều, chạy bộ. Tàu thuyền hoạt động bình thường.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 12, color: SettingsService.textDimColor),
-            ),
-          ],
-        );
-        break;
-      case 'rain':
-        dialogContent = Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.umbrella_rounded, color: Colors.indigoAccent, size: 48),
-            const SizedBox(height: 14),
-            Text(
-              'Lượng mưa tích lũy',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: SettingsService.textColor),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Dự báo lượng mưa trong 24h tới dưới 5mm (mưa bóng mây rải rác). Khả năng mưa dông kéo dài ở mức rất thấp.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 12, color: SettingsService.textDimColor),
-            ),
-          ],
-        );
-        break;
-      case 'history':
-      default:
-        dialogContent = Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.history_rounded, color: Colors.orangeAccent, size: 48),
-            const SizedBox(height: 14),
-            Text(
-              'Tìm kiếm theo lịch sử',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: SettingsService.textColor),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Bạn muốn tìm kiếm thành phố khác? Hãy sử dụng công cụ tìm kiếm tại tab Forecast để cập nhật lịch sử.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 12, color: SettingsService.textDimColor),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                final mainShell = context.findAncestorStateOfType<MainShellState>();
-                if (mainShell != null) {
-                  mainShell.setIndex(2); // Go to Forecast tab
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFC427FB),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: Text('Đến Tìm Kiếm', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
-            )
-          ],
-        );
-    }
-
-    showDialog(
+  // ── GRID INTERACTIVE BOTTOM SHEETS ───────────────────────────────────────
+  
+  // 1. Weather Detail Bottom Sheet for 1-tap view
+  void _showWeatherDetailSheet(
+    BuildContext context,
+    String cityName,
+    Weather w,
+    List<Forecast> forecasts,
+    double? distance,
+    double lat,
+    double lon,
+    bool isLightMode,
+  ) {
+    showModalBottomSheet(
       context: context,
-      builder: (BuildContext ctx) {
-        return AlertDialog(
-          backgroundColor: isLightMode ? Colors.white : const Color(0xFF1C1B33),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(
-            dialogTitle,
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16, color: SettingsService.textColor),
-            textAlign: TextAlign.center,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          decoration: BoxDecoration(
+            color: isLightMode ? Colors.white : const Color(0xFF1C1B33),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          content: dialogContent,
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text('Đóng', style: GoogleFonts.poppins(color: const Color(0xFFC427FB), fontWeight: FontWeight.bold)),
-            )
-          ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: SettingsService.dividerColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              
+              // Header: City name & distance
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        cityName,
+                        style: GoogleFonts.poppins(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: SettingsService.textColor,
+                        ),
+                      ),
+                      if (distance != null)
+                        Text(
+                          'Khoảng cách: cách bạn ${distance.toStringAsFixed(0)} km',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: Colors.blue.shade500,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                    ],
+                  ),
+                  Text(
+                    _statusEmoji(w.status),
+                    style: const TextStyle(fontSize: 38),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              // Stats details
+              Row(
+                children: [
+                  Text(
+                    '${w.temperature.toInt()}°C',
+                    style: GoogleFonts.poppins(
+                      fontSize: 44,
+                      fontWeight: FontWeight.w200,
+                      color: SettingsService.textColor,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        w.status,
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: SettingsService.textColor,
+                        ),
+                      ),
+                      Text(
+                        'Độ ẩm: ${w.humidity.toInt()}%  •  Sức gió: ${w.windSpeed.toInt()}km/h',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: SettingsService.textMutedColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              
+              // 3-day forecast mini preview
+              if (forecasts.isNotEmpty) ...[
+                Text(
+                  'Dự báo thời tiết 3 ngày tới:',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: SettingsService.textColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...forecasts.take(3).map((f) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 76,
+                        child: Text(
+                          f.dateTime,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: SettingsService.accentTitleColor,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        f.rainProbability > 40 ? Icons.grain_rounded : Icons.wb_sunny_rounded,
+                        color: f.rainProbability > 40 ? Colors.blue.shade300 : Colors.orange.shade400,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          f.description ?? f.getRainLabel(),
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: SettingsService.textMutedColor,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        '${f.maxTemp.toInt()}° / ${f.minTemp.toInt()}°',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: SettingsService.textColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+                const SizedBox(height: 18),
+              ],
+              
+              // Actions buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: SettingsService.dividerColor),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Text(
+                        'Đóng',
+                        style: GoogleFonts.poppins(
+                          color: SettingsService.textMutedColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        
+                        final mainShell = context.findAncestorStateOfType<MainShellState>();
+                        
+                        setState(() {
+                          _isRecommending = true;
+                        });
+                        
+                        try {
+                          // Lưu vào lịch sử tìm kiếm và cập nhật dữ liệu chung để đẩy thành phố này thành thành phố chính
+                          final firestore = FirestoreService();
+                          await firestore.saveSearchHistory(cityName, lat: lat, lon: lon);
+                          
+                          // Load lại dữ liệu
+                          await _dataManager.loadAllData();
+                          
+                          // Đồng bộ thành phố hoạt động toàn cục
+                          WeatherDataManager.activeCityName.value = cityName;
+                          
+                          // Quay về trang chủ
+                          if (mounted && mainShell != null) {
+                            mainShell.setIndex(0); // Switch to Home tab
+                          }
+                        } catch (e) {
+                          // ignore
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _isRecommending = false;
+                            });
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFC427FB),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Text(
+                        'Xem ở Trang Chủ',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
   }
 
-  // ── GRID INTERACTIVE BOTTOM SHEETS ───────────────────────────────────────
-  
+  // ── QUICK ICONS HANDLERS (1-tap access sheets) ─────────────────────────
+
+  void _handleQuickIconTap(BuildContext context, String type, String label, bool isLightMode) {
+    if (type == 'storm') {
+      _showStormWarningSheet(context, isLightMode);
+    } else if (type == 'humidity') {
+      _showHumiditySheet(context, isLightMode);
+    } else if (type == 'wind') {
+      _showWindSheet(context, isLightMode);
+    } else if (type == 'rain') {
+      _showRainMapSheet(context, isLightMode);
+    } else if (type == 'history') {
+      _showRecentSearchesSheet(context, isLightMode);
+    }
+  }
+
+  void _showStormWarningSheet(BuildContext context, bool isLightMode) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return _buildBottomSheetWrapper(
+          title: 'Cảnh báo Thiên tai & Bão',
+          isLightMode: isLightMode,
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_rounded, color: Colors.red, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Không có bão hay áp thấp nhiệt đới hoạt động trên khu vực Biển Đông tại thời điểm hiện tại.',
+                        style: GoogleFonts.poppins(fontSize: 11, color: SettingsService.textColor, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildBulletPoint('Khu vực Bắc Bộ & Trung Bộ có nắng nóng diện rộng.'),
+              _buildBulletPoint('Khuyến nghị tàu thuyền theo dõi dự báo thời tiết biển hàng ngày.'),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showHumiditySheet(BuildContext context, bool isLightMode) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return _buildBottomSheetWrapper(
+          title: 'Đo lường Độ ẩm Không khí',
+          isLightMode: isLightMode,
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        Text('65%', style: GoogleFonts.poppins(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.blue)),
+                        Text('Dễ chịu (Comfortable)', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.blue)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              _buildBulletPoint('Đo lường độ ẩm hiện tại trong khu vực dao động từ 60% đến 70%.'),
+              _buildBulletPoint('Độ ẩm 55%-65% là khoảng độ ẩm lý tưởng nhất cho sức khỏe con người.'),
+              _buildBulletPoint('Rất thích hợp cho các hoạt động ngoài trời, hạn chế nấm mốc phát triển.'),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showWindSheet(BuildContext context, bool isLightMode) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return _buildBottomSheetWrapper(
+          title: 'Đo lường Tốc độ & Hướng gió',
+          isLightMode: isLightMode,
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.teal.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        Text('12 km/h', style: GoogleFonts.poppins(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.teal)),
+                        Text('Gió nhẹ (Light Breeze)', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.teal)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              _buildBulletPoint('Hướng gió chủ đạo hiện tại: Tây Nam.'),
+              _buildBulletPoint('Gió nhẹ mát mẻ phù hợp cho việc đi dạo và các hoạt động ngoài trời.'),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showRecentSearchesSheet(BuildContext context, bool isLightMode) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return FutureBuilder<List<Map<String, dynamic>>>(
+          future: FirestoreService().getSearchHistory(),
+          builder: (context, snapshot) {
+            final List<Map<String, dynamic>> searches = snapshot.data ?? [];
+            return _buildBottomSheetWrapper(
+              title: 'Lịch sử tìm kiếm gần đây',
+              isLightMode: isLightMode,
+              child: searches.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Text(
+                        'Chưa có lịch sử tìm kiếm nào.',
+                        style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 12),
+                      ),
+                    )
+                  : ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.5,
+                      ),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: searches.length,
+                        itemBuilder: (context, index) {
+                          final s = searches[index];
+                          final String name = s['cityName'];
+                          final double? lat = s['lat'];
+                          final double? lon = s['lon'];
+                          
+                          // Check if we have this city in our cache
+                          final cachedCity = _dataManager.allCitiesData.firstWhere(
+                            (c) => c['city'].toString().toLowerCase() == name.toLowerCase(),
+                            orElse: () => <String, dynamic>{},
+                          );
+                          
+                          final Weather? w = cachedCity.isNotEmpty ? cachedCity['weather'] as Weather : null;
+                          
+                          return ListTile(
+                            leading: const Icon(Icons.history_rounded, color: Colors.orange),
+                            title: Text(
+                              name,
+                              style: GoogleFonts.poppins(
+                                color: SettingsService.textColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: lat != null && lon != null
+                                ? Text(
+                                    'Vĩ độ: ${lat.toStringAsFixed(2)}, Kinh độ: ${lon.toStringAsFixed(2)}',
+                                    style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 10),
+                                  )
+                                : null,
+                            trailing: w != null
+                                ? Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFC427FB).withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '${w.temperature.toInt()}°C',
+                                      style: GoogleFonts.poppins(
+                                        color: const Color(0xFFC427FB),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                            onTap: () async {
+                              Navigator.pop(context); // Close the history list sheet
+                              
+                              if (cachedCity.isNotEmpty) {
+                                // Open weather details modal directly in exactly 1 tap!
+                                _showWeatherDetailSheet(
+                                  context,
+                                  name,
+                                  cachedCity['weather'],
+                                  cachedCity['forecasts'],
+                                  null,
+                                  lat ?? 0.0,
+                                  lon ?? 0.0,
+                                  isLightMode,
+                                );
+                              } else if (lat != null && lon != null) {
+                                // Load details dynamically if not cached
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (context) => const Center(
+                                    child: CircularProgressIndicator(color: Color(0xFFC427FB)),
+                                  ),
+                                );
+                                
+                                try {
+                                  final apiService = ApiService();
+                                  final weatherResult = await apiService.fetchWeatherData(lat, lon, name);
+                                  if (context.mounted) {
+                                    Navigator.pop(context); // close loader
+                                    _showWeatherDetailSheet(
+                                      context,
+                                      name,
+                                      weatherResult['weather'],
+                                      weatherResult['forecasts'],
+                                      null,
+                                      lat,
+                                      lon,
+                                      isLightMode,
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    Navigator.pop(context); // close loader
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Không thể tải thời tiết cho $name')),
+                                    );
+                                  }
+                                }
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   // 1. Travel Weather Sheet
   void _showTravelWeatherSheet(BuildContext context, bool isLightMode) {
     final travelPlaces = [

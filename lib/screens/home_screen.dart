@@ -6,6 +6,7 @@ import '../models/forecast.dart';
 import '../service/firestore_service.dart';
 import '../service/settings_service.dart';
 import '../service/weather_data_manager.dart';
+import '../service/api_service.dart';
 
 // ============================================================
 // HomeScreen — Quang phụ trách
@@ -23,26 +24,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
 
-  int _selectedCityIndex = 0;
-
-  // ── List<City> dùng class City đầy đủ ────────────────────
-  late List<City> _cities;
+  final Set<String> _favoriteCities = {};
+  bool _isSearching = false;
+  final TextEditingController _searchCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _animCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
-    _cities = List.generate(_dataManager.allCitiesData.length, (i) {
-      final d = _dataManager.allCitiesData[i];
-      return City(
-        id: i + 1,
-        name: d['city'],
-        latitude: d['lat'],
-        longitude: d['lon'],
-        isFavorite: false, // Sẽ load từ Firestore sau
-      );
-    });
     _animCtrl.forward();
     _loadFavoritesFromFirestore();
   }
@@ -52,9 +42,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       final favorites = await firestoreService.getFavoriteCities();
       if (mounted) {
         setState(() {
-          for (var city in _cities) {
-            city.isFavorite = favorites.contains(city.name);
-          }
+          _favoriteCities.clear();
+          _favoriteCities.addAll(favorites);
         });
       }
     } catch (e) {
@@ -65,27 +54,38 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     _animCtrl.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
-  void _selectCity(int index) {
-    setState(() => _selectedCityIndex = index);
+  void _selectCity(String cityName) {
     _animCtrl.forward(from: 0);
-    // Lưu lịch sử xem thành phố kèm tọa độ để hệ thống gợi ý lân cận hoạt động
-    firestoreService.saveSearchHistory(
-      _cities[index].name,
-      lat: _cities[index].latitude,
-      lon: _cities[index].longitude,
+    WeatherDataManager.activeCityName.value = cityName;
+    
+    // Tìm tọa độ trong dữ liệu để lưu vào lịch sử
+    final cityData = _dataManager.allCitiesData.firstWhere(
+      (c) => c['city'].toString().toLowerCase() == cityName.toLowerCase(),
+      orElse: () => <String, dynamic>{},
     );
+    if (cityData.isNotEmpty) {
+      firestoreService.saveSearchHistory(
+        cityData['city'],
+        lat: cityData['lat'],
+        lon: cityData['lon'],
+      );
+    }
   }
 
-  void _toggleFavorite(int index) {
-    setState(() => _cities[index].toggleFavorite());
-    // Đồng bộ lên Firestore
-    firestoreService.toggleFavoriteCity(
-      _cities[index].name,
-      _cities[index].isFavorite,
-    );
+  void _toggleFavorite(String cityName) {
+    setState(() {
+      if (_favoriteCities.contains(cityName)) {
+        _favoriteCities.remove(cityName);
+        firestoreService.toggleFavoriteCity(cityName, false);
+      } else {
+        _favoriteCities.add(cityName);
+        firestoreService.toggleFavoriteCity(cityName, true);
+      }
+    });
   }
 
   // ── Helpers ───────────────────────────────────────────────
@@ -119,54 +119,242 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     if (_dataManager.allCitiesData.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
-    
-    final d = _dataManager.allCitiesData[_selectedCityIndex];
-    final City selectedCity = _cities[_selectedCityIndex];
 
-    // Tạo đối tượng Weather từ API data
-    final Weather weather = d['weather'];
+    return ValueListenableBuilder<String>(
+      valueListenable: WeatherDataManager.activeCityName,
+      builder: (context, activeName, _) {
+        // Tìm dữ liệu thời tiết cho thành phố đang hoạt động
+        int selectedIndex = _dataManager.allCitiesData.indexWhere(
+          (element) => element['city'].toString().toLowerCase() == activeName.toLowerCase(),
+        );
+        if (selectedIndex == -1) {
+          selectedIndex = 0; // fallback
+        }
 
-    // 5-day forecast data từ API
-    final List<Forecast> forecasts = d['forecasts'];
+        final d = _dataManager.allCitiesData[selectedIndex];
+        
+        // Tạo danh sách City động đồng bộ từ allCitiesData
+        final List<City> currentCities = List.generate(_dataManager.allCitiesData.length, (i) {
+          final cityData = _dataManager.allCitiesData[i];
+          final String cityName = cityData['city'];
+          return City(
+            id: i + 1,
+            name: cityName,
+            latitude: cityData['lat'] ?? 0.0,
+            longitude: cityData['lon'] ?? 0.0,
+            isFavorite: _favoriteCities.contains(cityName),
+          );
+        });
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: SettingsService.isLightMode,
-      builder: (context, isLightMode, _) {
-        return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter, end: Alignment.bottomCenter,
-              colors: [SettingsService.bgGradientTop, SettingsService.bgGradientBottom],
-            ),
-          ),
-          child: ValueListenableBuilder<bool>(
-        valueListenable: SettingsService.isCelsius,
-        builder: (context, isCelsius, _) {
-          return Column(children: [
-            Expanded(
-              child: FadeTransition(
-                opacity: _fadeAnim,
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-                  child: Column(children: [
-                    _buildMainCard(weather, selectedCity, isCelsius),
-                    const SizedBox(height: 20),
-                    const SizedBox(height: 20),
-                    _buildHourlyForecast(isCelsius),
-                    const SizedBox(height: 20),
-                    _buildForecastList(forecasts, isCelsius),
-                    const SizedBox(height: 20),
-                  ]),
+        final City selectedCity = currentCities[selectedIndex];
+        final Weather weather = d['weather'];
+        final List<Forecast> forecasts = d['forecasts'];
+
+        return ValueListenableBuilder<bool>(
+          valueListenable: SettingsService.isLightMode,
+          builder: (context, isLightMode, _) {
+            return Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  colors: [SettingsService.bgGradientTop, SettingsService.bgGradientBottom],
                 ),
               ),
-            ),
-            _buildFooter(),
-          ]);
+              child: ValueListenableBuilder<bool>(
+                valueListenable: SettingsService.isCelsius,
+                builder: (context, isCelsius, _) {
+                  return Column(children: [
+                    Expanded(
+                      child: FadeTransition(
+                        opacity: _fadeAnim,
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                          child: Column(children: [
+                            _buildHomeSearchBar(),
+                            _buildQuickSelectChips(currentCities, activeName),
+                            _buildMainCard(weather, selectedCity, isCelsius),
+                            const SizedBox(height: 20),
+                            _buildHourlyForecast(isCelsius),
+                            const SizedBox(height: 20),
+                            _buildForecastList(forecasts, isCelsius),
+                            const SizedBox(height: 20),
+                            _buildCityListSection(currentCities, activeName, isCelsius),
+                            const SizedBox(height: 20),
+                          ]),
+                        ),
+                      ),
+                    ),
+                    _buildFooter(),
+                  ]);
+                },
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ── Home Search Bar & Chips ───────────────────────────────
+  Widget _buildHomeSearchBar() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: _searchCtrl,
+        style: GoogleFonts.poppins(color: SettingsService.textColor),
+        decoration: InputDecoration(
+          hintText: 'Tìm thành phố trực tiếp...',
+          hintStyle: GoogleFonts.poppins(color: SettingsService.textMutedColor),
+          prefixIcon: Icon(Icons.search, color: SettingsService.textMutedColor),
+          suffixIcon: _isSearching
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: Padding(
+                    padding: EdgeInsets.all(12.0),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFC427FB)),
+                  ),
+                )
+              : null,
+          filled: true,
+          fillColor: SettingsService.cardColor,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(color: SettingsService.cardBorderColor),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(color: SettingsService.cardBorderColor),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(color: Color(0xFFC427FB)),
+          ),
+        ),
+        onSubmitted: (value) async {
+          final query = value.trim();
+          if (query.isNotEmpty) {
+            setState(() {
+              _isSearching = true;
+            });
+            
+            try {
+              final apiService = ApiService();
+              final geocodeData = await apiService.geocodeCity(query);
+              
+              if (geocodeData != null) {
+                final double lat = geocodeData['lat'];
+                final double lon = geocodeData['lon'];
+                final String cityName = geocodeData['name'];
+                final String country = geocodeData['country'];
+                
+                final weatherResult = await apiService.fetchWeatherData(lat, lon, cityName);
+                final Weather weather = weatherResult['weather'];
+                final List<Forecast> forecasts = weatherResult['forecasts'];
+                
+                final firestore = FirestoreService();
+                await firestore.saveCity(cityName, {
+                  'name': cityName,
+                  'country': country,
+                  'latitude': lat,
+                  'longitude': lon,
+                });
+                
+                await firestore.saveWeather(cityName, weather.toMap());
+                await firestore.saveForecast(cityName, forecasts.map((e) => e.toMap()).toList());
+                await firestore.saveSearchHistory(cityName, lat: lat, lon: lon);
+                
+                // Cập nhật bộ nhớ đệm
+                _dataManager.allCitiesData.removeWhere((element) => element['city'].toString().toLowerCase() == cityName.toLowerCase());
+                _dataManager.allCitiesData.insert(0, {
+                  'city': cityName,
+                  'lat': lat,
+                  'lon': lon,
+                  'weather': weather,
+                  'forecasts': forecasts,
+                });
+                
+                // Cập nhật các vùng lân cận và đổi activeCityName
+                await _dataManager.loadAllData();
+                WeatherDataManager.activeCityName.value = cityName;
+                _searchCtrl.clear();
+              } else {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Không tìm thấy thành phố này')),
+                  );
+                }
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Đã có lỗi xảy ra khi tìm kiếm')),
+                );
+              }
+            } finally {
+              if (mounted) {
+                setState(() {
+                  _isSearching = false;
+                });
+              }
+            }
+          }
         },
       ),
     );
-    },
+  }
+
+  Widget _buildQuickSelectChips(List<City> cities, String activeCityName) {
+    return Container(
+      height: 38,
+      margin: const EdgeInsets.only(bottom: 16),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: cities.length,
+        itemBuilder: (context, index) {
+          final city = cities[index];
+          final bool isActive = city.name.toLowerCase() == activeCityName.toLowerCase();
+          
+          return GestureDetector(
+            onTap: () => _selectCity(city.name),
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                gradient: isActive
+                    ? LinearGradient(colors: [SettingsService.primaryGradientStart, SettingsService.primaryGradientEnd])
+                    : null,
+                color: isActive ? null : SettingsService.cardColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isActive
+                      ? const Color(0xFFC427FB).withValues(alpha: 0.5)
+                      : SettingsService.cardBorderColor,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (city.isFavorite) ...[
+                    const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 14),
+                    const SizedBox(width: 4),
+                  ],
+                  Text(
+                    city.name,
+                    style: GoogleFonts.poppins(
+                      color: isActive ? Colors.white : SettingsService.textColor,
+                      fontSize: 12,
+                      fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -200,7 +388,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(width: 6),
               GestureDetector(
-                onTap: () => _toggleFavorite(_selectedCityIndex),
+                onTap: () => _toggleFavorite(city.name),
                 child: Icon(
                   city.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
                   color: city.isFavorite ? const Color(0xFFFFD700) : Colors.white60,
@@ -401,23 +589,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   // ── City List Section (cuộn xuống thấy) ──────────────────
-  Widget _buildCityListSection(bool isCelsius) {
+  Widget _buildCityListSection(List<City> cities, String activeCityName, bool isCelsius) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _sectionLabel('Thành Phố Lớn'),
       const SizedBox(height: 10),
-      ...List.generate(_cities.length, (i) => _buildCityCard(i, isCelsius)),
+      ...List.generate(cities.length, (i) => _buildCityCard(cities, i, activeCityName, isCelsius)),
     ]);
   }
 
   // ── City Card UI ──────────────────────────────────────────
-  Widget _buildCityCard(int index, bool isCelsius) {
-    final City city = _cities[index];
+  Widget _buildCityCard(List<City> cities, int index, String activeCityName, bool isCelsius) {
+    final City city = cities[index];
     final d = _dataManager.allCitiesData[index];
     final Weather w = d['weather'];
-    final bool isSelected = index == _selectedCityIndex;
+    final bool isSelected = city.name.toLowerCase() == activeCityName.toLowerCase();
 
     return GestureDetector(
-      onTap: () => _selectCity(index),
+      onTap: () => _selectCity(city.name),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         margin: const EdgeInsets.only(bottom: 10),
@@ -452,32 +640,32 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Text(city.name, style: GoogleFonts.poppins(
-                color: SettingsService.textColor, fontSize: 15, fontWeight: FontWeight.w600)),
+                color: isSelected ? Colors.white : SettingsService.textColor, fontSize: 15, fontWeight: FontWeight.w600)),
               if (city.isFavorite) ...[
                 const SizedBox(width: 4),
                 const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 14),
               ],
             ]),
             Text('Lat: ${city.latitude} | Lon: ${city.longitude}',
-              style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 10)),
+              style: GoogleFonts.poppins(color: isSelected ? Colors.white70 : SettingsService.textMutedColor, fontSize: 10)),
           ])),
 
           // Temperature
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Text(
               '${isCelsius ? w.temperature.toInt() : (w.temperature * 9 / 5 + 32).toInt()}°',
-              style: GoogleFonts.poppins(color: SettingsService.textColor, fontSize: 18, fontWeight: FontWeight.bold)
+              style: GoogleFonts.poppins(color: isSelected ? Colors.white : SettingsService.textColor, fontSize: 18, fontWeight: FontWeight.bold)
             ),
-            Text(w.status, style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 11)),
+            Text(w.status, style: GoogleFonts.poppins(color: isSelected ? Colors.white70 : SettingsService.textMutedColor, fontSize: 11)),
           ]),
           const SizedBox(width: 8),
 
           // Favorite button
           GestureDetector(
-            onTap: () => _toggleFavorite(index),
+            onTap: () => _toggleFavorite(city.name),
             child: Icon(
               city.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
-              color: city.isFavorite ? const Color(0xFFFFD700) : SettingsService.textMutedColor,
+              color: city.isFavorite ? const Color(0xFFFFD700) : (isSelected ? Colors.white70 : SettingsService.textMutedColor),
               size: 22,
             ),
           ),
