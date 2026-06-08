@@ -356,7 +356,7 @@ class _ContentScreenState extends State<ContentScreen> {
   Widget _buildRecentSearches() {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: FirestoreService().getSearchHistory(),
-      builder: (context, snapshot) {
+      builder: (_, snapshot) {
         if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox.shrink();
         
         final searches = snapshot.data!.take(5).toList();

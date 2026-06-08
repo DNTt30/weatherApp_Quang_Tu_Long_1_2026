@@ -124,8 +124,8 @@ class FirestoreService {
         .collection('history')
         .add({
       'cityName': cityName,
-      if (lat != null) 'lat': lat,
-      if (lon != null) 'lon': lon,
+      'lat': ?lat,
+      'lon': ?lon,
       'timestamp': FieldValue.serverTimestamp(),
     });
   }
