@@ -81,6 +81,10 @@ class _MainShellState extends State<MainShell> {
   }
 
   Future<void> _loadInitialData() async {
+    // Reset to defaults first to avoid leftovers from previous sessions
+    SettingsService.isLightMode.value = false;
+    SettingsService.isCelsius.value = true;
+
     // 1. Load User Settings
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {

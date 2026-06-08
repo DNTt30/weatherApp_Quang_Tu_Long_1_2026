@@ -14,7 +14,7 @@ class SettingsService {
   // Chuyển đổi trạng thái nhiệt độ
   static void toggleTemperatureUnit() {
     isCelsius.value = !isCelsius.value;
-    FirestoreService().updateUserSettings(isCelsius.value, !isLightMode.value);
+    FirestoreService().updateUserSettings(isCelsius.value, isLightMode.value);
   }
 
   // Chuyển đổi trạng thái thông báo
@@ -25,7 +25,7 @@ class SettingsService {
   // Chuyển đổi trạng thái giao diện sáng
   static void toggleLightMode() {
     isLightMode.value = !isLightMode.value;
-    FirestoreService().updateUserSettings(isCelsius.value, !isLightMode.value);
+    FirestoreService().updateUserSettings(isCelsius.value, isLightMode.value);
   }
 
   // ── Tiện ích màu sắc động (Light/Dark) ──────────────────

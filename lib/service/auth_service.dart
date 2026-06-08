@@ -37,7 +37,7 @@ class AuthService {
       'createdAt': FieldValue.serverTimestamp(),
       'favoriteCities': [],
       'temperatureUnit': 'C',
-      'darkMode': false,
+      'darkMode': true,
     });
 
     return userCredential;
