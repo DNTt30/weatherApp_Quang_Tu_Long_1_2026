@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../service/settings_service.dart';
 
 /// BottomNavBar — Purple Glassmorphism Theme
 /// Palette: bg #1F1D47 | active #C427FB | inactive #EBEBF5
@@ -17,8 +18,8 @@ class BottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1F1D47),
-        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+        color: SettingsService.footerBgColor,
+        border: Border(top: BorderSide(color: SettingsService.dividerColor)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -70,7 +71,7 @@ class _NavItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
           gradient: isSelected
-              ? const LinearGradient(colors: [Color(0xFF48319D), Color(0xFFC427FB)])
+              ? LinearGradient(colors: [SettingsService.primaryGradientStart, SettingsService.primaryGradientEnd])
               : null,
           color: isSelected ? null : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
@@ -87,7 +88,7 @@ class _NavItem extends StatelessWidget {
               child: Icon(
                 isSelected ? activeIcon : icon,
                 key: ValueKey(isSelected),
-                color: isSelected ? Colors.white : const Color(0xFFEBEBF5).withValues(alpha: 0.4),
+                color: isSelected ? Colors.white : SettingsService.textMutedColor,
                 size: 24,
               ),
             ),
@@ -97,7 +98,7 @@ class _NavItem extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                color: isSelected ? Colors.white : const Color(0xFFEBEBF5).withValues(alpha: 0.4),
+                color: isSelected ? Colors.white : SettingsService.textMutedColor,
               ),
             ),
           ],

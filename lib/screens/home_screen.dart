@@ -8,7 +8,7 @@ import '../service/settings_service.dart';
 import '../service/weather_data_manager.dart';
 
 // ============================================================
-// HomeScreen — Long phụ trách
+// HomeScreen — Quang phụ trách
 // Tên thành phố | Nhiệt độ | Thời tiết | Dự báo | City list
 // ============================================================
 class HomeScreen extends StatefulWidget {
@@ -71,6 +71,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void _selectCity(int index) {
     setState(() => _selectedCityIndex = index);
     _animCtrl.forward(from: 0);
+    // Lưu lịch sử xem thành phố
+    firestoreService.saveSearchHistory(_cities[index].name);
   }
 
   void _toggleFavorite(int index) {
@@ -123,14 +125,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     // 5-day forecast data từ API
     final List<Forecast> forecasts = d['forecasts'];
 
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          colors: [Color(0xFF2E335A), Color(0xFF1C1B33)],
-        ),
-      ),
-      child: ValueListenableBuilder<bool>(
+    return ValueListenableBuilder<bool>(
+      valueListenable: SettingsService.isLightMode,
+      builder: (context, isLightMode, _) {
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              colors: [SettingsService.bgGradientTop, SettingsService.bgGradientBottom],
+            ),
+          ),
+          child: ValueListenableBuilder<bool>(
         valueListenable: SettingsService.isCelsius,
         builder: (context, isCelsius, _) {
           return Column(children: [
@@ -158,8 +163,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
             _buildFooter(),
           ]);
-        }
+        },
       ),
+    );
+    },
     );
   }
 
@@ -167,29 +174,29 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget _buildGroupHeader() {
     return Container(
       width: double.infinity, height: 100,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF48319D), Color(0xFF5936B4)],
+          colors: [SettingsService.primaryGradientStart, SettingsService.primaryGradientEnd],
           begin: Alignment.topLeft, end: Alignment.bottomRight,
         ),
       ),
       child: Stack(children: [
         Positioned(right: -20, top: -20, child: Container(width: 100, height: 100,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.05)))),
+          decoration: BoxDecoration(shape: BoxShape.circle, color: SettingsService.cardBorderColor))),
         Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Row(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.photo_camera_rounded, color: Colors.white54, size: 18),
+            Icon(Icons.photo_camera_rounded, color: SettingsService.textMutedColor, size: 18),
             const SizedBox(width: 8),
-            Text('Ảnh Nhóm', style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+            Text('Ảnh Nhóm', style: GoogleFonts.poppins(color: SettingsService.textDimColor, fontSize: 13, fontWeight: FontWeight.w500)),
           ]),
           const SizedBox(height: 4),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: SettingsService.cardBorderColor,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text('Long_Home', style: GoogleFonts.poppins(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+            child: Text('Long_Home', style: GoogleFonts.poppins(color: SettingsService.textColor, fontSize: 11, fontWeight: FontWeight.w700)),
           ),
         ])),
       ]),
@@ -203,14 +210,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft, end: Alignment.bottomRight,
-          colors: [Color(0xFF5936B4), Color(0xFF362A84)],
+          colors: [SettingsService.primaryGradientStart, SettingsService.primaryGradientEnd],
         ),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+        border: Border.all(color: SettingsService.cardBorderColor),
         boxShadow: [BoxShadow(
-          color: const Color(0xFF48319D).withValues(alpha: 0.5),
+          color: SettingsService.primaryGradientStart.withValues(alpha: 0.5),
           blurRadius: 24, offset: const Offset(0, 8))],
       ),
       child: Column(children: [
@@ -218,22 +225,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              const Icon(Icons.location_on_rounded, color: Color(0xFFE0D9FF), size: 16),
+              Icon(Icons.location_on_rounded, color: SettingsService.accentTitleColor, size: 16),
               const SizedBox(width: 4),
               Text(city.name, style: GoogleFonts.poppins(
-                color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                color: SettingsService.textColor, fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(width: 6),
               GestureDetector(
                 onTap: () => _toggleFavorite(_selectedCityIndex),
                 child: Icon(
                   city.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
-                  color: city.isFavorite ? const Color(0xFFFFD700) : Colors.white38,
+                  color: city.isFavorite ? const Color(0xFFFFD700) : SettingsService.textMutedColor,
                   size: 20,
                 ),
               ),
             ]),
             Text(city.getCityInfo().split('|').last.trim(),
-              style: GoogleFonts.poppins(color: Colors.white38, fontSize: 10)),
+              style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 10)),
           ])),
           Text(_statusEmoji(weather.status), style: const TextStyle(fontSize: 48)),
         ]),
@@ -246,14 +253,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           child: Text(
             weather.formatTemperature(fahrenheit: !isCelsius),
             style: GoogleFonts.poppins(
-              color: Colors.white, fontSize: 68,
+              color: SettingsService.textColor, fontSize: 68,
               fontWeight: FontWeight.w200, height: 1),
           ),
         ),
         Align(
           alignment: Alignment.centerLeft,
           child: Text(weather.status, style: GoogleFonts.poppins(
-            color: const Color(0xFFE0D9FF), fontSize: 16)),
+            color: SettingsService.accentTitleColor, fontSize: 16)),
         ),
 
         const SizedBox(height: 16),
@@ -279,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               border: Border.all(color: const Color(0xFFC427FB).withValues(alpha: 0.4)),
             ),
             child: Text(warning, style: GoogleFonts.poppins(
-              color: const Color(0xFFE0D9FF), fontSize: 11)),
+              color: SettingsService.accentTitleColor, fontSize: 11)),
           ),
         ],
       ]),
@@ -290,15 +297,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: SettingsService.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: SettingsService.cardColor),
       ),
       child: Column(children: [
-        Icon(icon, color: const Color(0xFFE0D9FF), size: 16),
+        Icon(icon, color: SettingsService.accentTitleColor, size: 16),
         const SizedBox(height: 4),
-        Text(value, style: GoogleFonts.poppins(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-        Text(label, style: GoogleFonts.poppins(color: Colors.white38, fontSize: 9), overflow: TextOverflow.ellipsis),
+        Text(value, style: GoogleFonts.poppins(color: SettingsService.textColor, fontSize: 12, fontWeight: FontWeight.bold)),
+        Text(label, style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 9), overflow: TextOverflow.ellipsis),
       ]),
     ),
   );
@@ -319,9 +326,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.07),
+          color: SettingsService.cardBorderColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          border: Border.all(color: SettingsService.cardColor),
         ),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -331,19 +338,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               margin: const EdgeInsets.only(right: 12),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: SettingsService.cardBorderColor,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(children: [
                 Text(h['time'] as String, style: GoogleFonts.poppins(
-                  color: const Color(0xFFE0D9FF), fontSize: 11)),
+                  color: SettingsService.accentTitleColor, fontSize: 11)),
                 const SizedBox(height: 8),
                 Icon(h['icon'] as IconData, color: h['color'] as Color, size: 22),
                 const SizedBox(height: 8),
                 Text(
                   '${isCelsius ? h['temp'] : ((h['temp'] as int) * 9 / 5 + 32).toInt()}°',
                   style: GoogleFonts.poppins(
-                    color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)
+                    color: SettingsService.textColor, fontSize: 14, fontWeight: FontWeight.bold)
                 ),
               ]),
             )).toList(),
@@ -360,9 +367,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       const SizedBox(height: 10),
       Container(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.07),
+          color: SettingsService.cardBorderColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          border: Border.all(color: SettingsService.cardColor),
         ),
         child: Column(
           children: List.generate(forecasts.length, (i) {
@@ -381,18 +388,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 border: i < forecasts.length - 1
-                    ? Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.06)))
+                    ? Border(bottom: BorderSide(color: SettingsService.cardBorderColor))
                     : null,
               ),
               child: Row(children: [
                 SizedBox(width: 34, child: Text(fo.dateTime, style: GoogleFonts.poppins(
-                  color: const Color(0xFFE0D9FF), fontSize: 13, fontWeight: FontWeight.w600))),
+                  color: SettingsService.accentTitleColor, fontSize: 13, fontWeight: FontWeight.w600))),
                 const SizedBox(width: 10),
                 Icon(icon, color: iconColor, size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(fo.description ?? fo.getRainLabel(), style: GoogleFonts.poppins(
-                    color: Colors.white54, fontSize: 11),
+                    color: SettingsService.textMutedColor, fontSize: 11),
                     overflow: TextOverflow.ellipsis),
                 ),
                 const Spacer(),
@@ -404,7 +411,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ClipRRect(borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: fo.rainProbability / 100,
-                      backgroundColor: Colors.white.withValues(alpha: 0.1),
+                      backgroundColor: SettingsService.cardColor,
                       valueColor: const AlwaysStoppedAnimation(Color(0xFF83B4FF)),
                       minHeight: 3)),
                 ])),
@@ -412,9 +419,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 // Temp range
                 Row(children: [
                   Text('${isCelsius ? fo.maxTemp.toInt() : (fo.maxTemp * 9 / 5 + 32).toInt()}°', style: GoogleFonts.poppins(
-                    color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    color: SettingsService.textColor, fontSize: 14, fontWeight: FontWeight.bold)),
                   Text(' / ${isCelsius ? fo.minTemp.toInt() : (fo.minTemp * 9 / 5 + 32).toInt()}°', style: GoogleFonts.poppins(
-                    color: Colors.white38, fontSize: 12)),
+                    color: SettingsService.textMutedColor, fontSize: 12)),
                 ]),
               ]),
             );
@@ -448,16 +455,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           gradient: isSelected
-              ? const LinearGradient(colors: [Color(0xFF48319D), Color(0xFF5936B4)])
+              ? LinearGradient(colors: [SettingsService.primaryGradientStart, SettingsService.primaryGradientEnd])
               : null,
-          color: isSelected ? null : Colors.white.withValues(alpha: 0.06),
+          color: isSelected ? null : SettingsService.cardBorderColor,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isSelected
                 ? const Color(0xFFC427FB).withValues(alpha: 0.5)
-                : Colors.white.withValues(alpha: 0.1)),
+                : SettingsService.cardColor),
           boxShadow: isSelected ? [
-            BoxShadow(color: const Color(0xFF48319D).withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 4)),
+            BoxShadow(color: SettingsService.primaryGradientStart.withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 4)),
           ] : [],
         ),
         child: Row(children: [
@@ -476,23 +483,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Text(city.name, style: GoogleFonts.poppins(
-                color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                color: SettingsService.textColor, fontSize: 15, fontWeight: FontWeight.w600)),
               if (city.isFavorite) ...[
                 const SizedBox(width: 4),
                 const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 14),
               ],
             ]),
             Text('Lat: ${city.latitude} | Lon: ${city.longitude}',
-              style: GoogleFonts.poppins(color: Colors.white38, fontSize: 10)),
+              style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 10)),
           ])),
 
           // Temperature
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Text(
               '${isCelsius ? w.temperature.toInt() : (w.temperature * 9 / 5 + 32).toInt()}°',
-              style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
+              style: GoogleFonts.poppins(color: SettingsService.textColor, fontSize: 18, fontWeight: FontWeight.bold)
             ),
-            Text(w.status, style: GoogleFonts.poppins(color: Colors.white38, fontSize: 11)),
+            Text(w.status, style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 11)),
           ]),
           const SizedBox(width: 8),
 
@@ -501,7 +508,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             onTap: () => _toggleFavorite(index),
             child: Icon(
               city.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
-              color: city.isFavorite ? const Color(0xFFFFD700) : Colors.white24,
+              color: city.isFavorite ? const Color(0xFFFFD700) : SettingsService.textMutedColor,
               size: 22,
             ),
           ),
@@ -523,17 +530,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       child: Container(
         width: double.infinity, height: 50,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [Color(0xFF48319D), Color(0xFFC427FB)]),
+          gradient: LinearGradient(colors: [SettingsService.primaryGradientStart, SettingsService.primaryGradientEnd]),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [BoxShadow(
             color: const Color(0xFFC427FB).withValues(alpha: 0.3),
             blurRadius: 12, offset: const Offset(0, 4))],
         ),
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const Icon(Icons.add_location_alt_rounded, color: Colors.white, size: 20),
+          Icon(Icons.add_location_alt_rounded, color: SettingsService.textColor, size: 20),
           const SizedBox(width: 8),
           Text('Thêm vào Firestore', style: GoogleFonts.poppins(
-            color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+            color: SettingsService.textColor, fontWeight: FontWeight.w600, fontSize: 14)),
         ]),
       ),
     );
@@ -544,24 +551,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1F1D47).withValues(alpha: 0.95),
-        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+        color: SettingsService.footerBgColor,
+        border: Border(top: BorderSide(color: SettingsService.cardBorderColor)),
       ),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Row(children: [
-          const Icon(Icons.school_rounded, size: 12, color: Color(0xFFE0D9FF)),
+          Icon(Icons.school_rounded, size: 12, color: SettingsService.accentTitleColor),
           const SizedBox(width: 6),
           Text('Phenikaa University', style: GoogleFonts.poppins(
-            fontSize: 11, color: const Color(0xFFE0D9FF), fontWeight: FontWeight.w600)),
+            fontSize: 11, color: SettingsService.accentTitleColor, fontWeight: FontWeight.w600)),
         ]),
         const SizedBox(height: 3),
         Text('Dương Ngọc Tú (22010052) • Ngô Thành Long (23010032) • Lê Minh Quang (21012086)',
-          style: GoogleFonts.poppins(fontSize: 9, color: Colors.white38),
+          style: GoogleFonts.poppins(fontSize: 9, color: SettingsService.textMutedColor),
           overflow: TextOverflow.ellipsis),
       ]),
     );
   }
 
   Widget _sectionLabel(String text) => Text(text, style: GoogleFonts.poppins(
-    color: const Color(0xFFE0D9FF), fontSize: 14, fontWeight: FontWeight.w700));
+    color: SettingsService.accentTitleColor, fontSize: 14, fontWeight: FontWeight.w700));
 }

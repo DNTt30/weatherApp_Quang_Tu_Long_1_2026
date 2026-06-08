@@ -6,8 +6,8 @@ import '../service/settings_service.dart';
 import '../service/weather_data_manager.dart';
 
 // ============================================================
-// ContentScreen — Quang phụ trách
-// Dự báo theo giờ | Dự báo theo ngày | Độ ẩm | Gió | UV | So sánh
+// ContentScreen — Long phụ trách
+// Cảnh báo thời tiết | Tốc độ gió, độ ẩm, UV | Dự báo 5 ngày 
 // ============================================================
 class ContentScreen extends StatelessWidget {
   const ContentScreen({super.key});
@@ -30,17 +30,20 @@ class ContentScreen extends StatelessWidget {
         .map((e) => e['weather'] as Weather)
         .toList();
 
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          colors: [Color(0xFF2E335A), Color(0xFF1C1B33)],
-        ),
-      ),
-      child: ValueListenableBuilder<bool>(
-        valueListenable: SettingsService.isCelsius,
-        builder: (context, isCelsius, _) {
-          return Column(children: [
+    return ValueListenableBuilder<bool>(
+      valueListenable: SettingsService.isLightMode,
+      builder: (context, isLightMode, _) {
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              colors: [SettingsService.bgGradientTop, SettingsService.bgGradientBottom],
+            ),
+          ),
+          child: ValueListenableBuilder<bool>(
+            valueListenable: SettingsService.isCelsius,
+            builder: (context, isCelsius, _) {
+              return Column(children: [
             _buildHeader(),
             Expanded(
               child: SingleChildScrollView(
@@ -84,6 +87,8 @@ class ContentScreen extends StatelessWidget {
         }
       ),
     );
+    },
+    );
   }
 
   // ── Header ────────────────────────────────────────────────
@@ -91,30 +96,30 @@ class ContentScreen extends StatelessWidget {
     return Container(
       width: double.infinity, height: 100,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF3658B1), Color(0xFFC159EC)],
+        gradient: LinearGradient(
+          colors: [SettingsService.primaryGradientStart, SettingsService.primaryGradientEnd],
           begin: Alignment.topLeft, end: Alignment.bottomRight,
         ),
         boxShadow: [BoxShadow(color: const Color(0xFF3658B1).withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: Stack(children: [
         Positioned(right: -20, top: -20, child: Container(width: 100, height: 100,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.05)))),
+          decoration: BoxDecoration(shape: BoxShape.circle, color: SettingsService.cardBorderColor))),
         Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Row(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.photo_camera_rounded, color: Colors.white54, size: 18),
+            Icon(Icons.photo_camera_rounded, color: SettingsService.textMutedColor, size: 18),
             const SizedBox(width: 8),
-            Text('Ảnh Nhóm', style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+            Text('Ảnh Nhóm', style: GoogleFonts.poppins(color: SettingsService.textDimColor, fontSize: 13, fontWeight: FontWeight.w500)),
           ]),
           const SizedBox(height: 4),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: SettingsService.cardBorderColor,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text('Quang_Forecast', style: GoogleFonts.poppins(
-              color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+              color: SettingsService.textColor, fontSize: 11, fontWeight: FontWeight.w700)),
           ),
         ])),
       ]),
@@ -135,7 +140,7 @@ class ContentScreen extends StatelessWidget {
         const Icon(Icons.warning_amber_rounded, color: Color(0xFFC427FB), size: 22),
         const SizedBox(width: 10),
         Expanded(child: Text(weather.getWarning()!, style: GoogleFonts.poppins(
-          color: const Color(0xFFE0D9FF), fontSize: 12))),
+          color: SettingsService.accentTitleColor, fontSize: 12))),
       ]),
     );
   }
@@ -186,28 +191,28 @@ class ContentScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.07),
+        color: SettingsService.cardBorderColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: SettingsService.cardColor),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Icon(icon, color: iconColor, size: 18),
           const SizedBox(width: 6),
-          Text(label, style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12)),
+          Text(label, style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 12)),
         ]),
         const SizedBox(height: 8),
         Text(value, style: GoogleFonts.poppins(
-          color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+          color: SettingsService.textColor, fontSize: 22, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         ClipRRect(borderRadius: BorderRadius.circular(8),
           child: LinearProgressIndicator(
             value: progress,
-            backgroundColor: Colors.white.withValues(alpha: 0.1),
+            backgroundColor: SettingsService.cardColor,
             valueColor: AlwaysStoppedAnimation(progressColor),
             minHeight: 6)),
         const SizedBox(height: 4),
-        Text(subLabel, style: GoogleFonts.poppins(color: Colors.white38, fontSize: 10)),
+        Text(subLabel, style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 10)),
       ]),
     );
   }
@@ -224,16 +229,16 @@ class ContentScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.07),
+        color: SettingsService.cardBorderColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: SettingsService.cardColor),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Row(children: [
             const Icon(Icons.wb_sunny_outlined, color: Color(0xFFFFD700), size: 18),
             const SizedBox(width: 6),
-            Text('Chỉ số UV', style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12)),
+            Text('Chỉ số UV', style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 12)),
           ]),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
@@ -249,18 +254,18 @@ class ContentScreen extends StatelessWidget {
         const SizedBox(height: 10),
         Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
           Text('${weather.uvIndex}', style: GoogleFonts.poppins(
-            color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
+            color: SettingsService.textColor, fontSize: 36, fontWeight: FontWeight.bold)),
           const SizedBox(width: 4),
-          Text('/11', style: GoogleFonts.poppins(color: Colors.white38, fontSize: 16)),
+          Text('/11', style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 16)),
           const Spacer(),
-          Text('Đo lúc 12:00', style: GoogleFonts.poppins(color: Colors.white24, fontSize: 10)),
+          Text('Đo lúc 12:00', style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 10)),
         ]),
         const SizedBox(height: 8),
         // UV scale bar
         ClipRRect(borderRadius: BorderRadius.circular(8),
           child: LinearProgressIndicator(
             value: uvProgress,
-            backgroundColor: Colors.white.withValues(alpha: 0.1),
+            backgroundColor: SettingsService.cardColor,
             valueColor: AlwaysStoppedAnimation(uvColor),
             minHeight: 8)),
         const SizedBox(height: 6),
@@ -288,9 +293,9 @@ class ContentScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.07),
+        color: SettingsService.cardBorderColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: SettingsService.cardColor),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -300,18 +305,18 @@ class ContentScreen extends StatelessWidget {
             margin: const EdgeInsets.only(right: 12),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
+              color: SettingsService.cardBorderColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              border: Border.all(color: SettingsService.cardBorderColor),
             ),
             child: Column(children: [
               Text(h['time'] as String, style: GoogleFonts.poppins(
-                color: const Color(0xFFE0D9FF), fontSize: 11)),
+                color: SettingsService.accentTitleColor, fontSize: 11)),
               const SizedBox(height: 10),
               Icon(h['icon'] as IconData, color: h['color'] as Color, size: 22),
               const SizedBox(height: 6),
               Text('${isCelsius ? h['temp'] : ((h['temp'] as int) * 9 / 5 + 32).toInt()}°', style: GoogleFonts.poppins(
-                color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                color: SettingsService.textColor, fontSize: 14, fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
               Row(mainAxisSize: MainAxisSize.min, children: [
                 const Icon(Icons.water_drop_rounded, size: 9, color: Color(0xFF83B4FF)),
@@ -336,9 +341,9 @@ class ContentScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.07),
+        color: SettingsService.cardBorderColor,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: SettingsService.cardColor),
       ),
       child: Row(children: [
         Container(padding: const EdgeInsets.all(10),
@@ -347,32 +352,32 @@ class ContentScreen extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(fo.dateTime, style: GoogleFonts.poppins(
-            color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+            color: SettingsService.textColor, fontSize: 13, fontWeight: FontWeight.w600)),
           Text(fo.description ?? fo.getRainLabel(), style: GoogleFonts.poppins(
-            color: Colors.white38, fontSize: 11)),
+            color: SettingsService.textMutedColor, fontSize: 11)),
           const SizedBox(height: 6),
           Row(children: [
             const Icon(Icons.water_drop_rounded, size: 11, color: Color(0xFF83B4FF)),
             const SizedBox(width: 3),
             Text('${fo.rainProbability}%  •  Chênh lệch: ${isCelsius ? fo.getTemperatureDifference().toStringAsFixed(1) : (fo.getTemperatureDifference() * 9 / 5).toStringAsFixed(1)}°',
-              style: GoogleFonts.poppins(color: Colors.white38, fontSize: 10)),
+              style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 10)),
           ]),
           const SizedBox(height: 5),
           ClipRRect(borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
               value: fo.rainProbability / 100,
-              backgroundColor: Colors.white.withValues(alpha: 0.1),
+              backgroundColor: SettingsService.cardColor,
               valueColor: AlwaysStoppedAnimation(highRain ? const Color(0xFF83B4FF) : const Color(0xFF83B4FF).withValues(alpha: 0.4)),
               minHeight: 4)),
         ])),
         const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text('${isCelsius ? fo.maxTemp.toInt() : (fo.maxTemp * 9 / 5 + 32).toInt()}°', style: GoogleFonts.poppins(
-            color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            color: SettingsService.textColor, fontSize: 20, fontWeight: FontWeight.bold)),
           Text('${isCelsius ? fo.minTemp.toInt() : (fo.minTemp * 9 / 5 + 32).toInt()}°', style: GoogleFonts.poppins(
-            color: Colors.white38, fontSize: 13)),
+            color: SettingsService.textMutedColor, fontSize: 13)),
           Text('TB: ${isCelsius ? fo.getAverageTemp().toStringAsFixed(0) : (fo.getAverageTemp() * 9 / 5 + 32).toStringAsFixed(0)}°',
-            style: GoogleFonts.poppins(color: Colors.white24, fontSize: 10)),
+            style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 10)),
         ]),
       ]),
     );
@@ -382,24 +387,24 @@ class ContentScreen extends StatelessWidget {
   Widget _buildComparisonTable(List<Weather> weathers, bool isCelsius) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.07),
+        color: SettingsService.cardBorderColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: SettingsService.cardColor),
       ),
       child: Column(children: [
         // Header
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(colors: [Color(0xFF48319D), Color(0xFF5936B4)]),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [SettingsService.primaryGradientStart, SettingsService.primaryGradientEnd]),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Row(children: [
-            Expanded(flex:3, child: Text('Thành Phố', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 11))),
-            Expanded(flex:2, child: Text('Nhiệt Độ',  textAlign: TextAlign.center, style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 11))),
-            Expanded(flex:2, child: Text('Độ Ẩm',     textAlign: TextAlign.center, style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 11))),
-            Expanded(flex:2, child: Text('Gió',        textAlign: TextAlign.center, style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 11))),
-            Expanded(flex:1, child: Text('UV',         textAlign: TextAlign.center, style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 11))),
+            Expanded(flex:3, child: Text('Thành Phố', style: GoogleFonts.poppins(color: SettingsService.textColor, fontWeight: FontWeight.w600, fontSize: 11))),
+            Expanded(flex:2, child: Text('Nhiệt Độ',  textAlign: TextAlign.center, style: GoogleFonts.poppins(color: SettingsService.textColor, fontWeight: FontWeight.w600, fontSize: 11))),
+            Expanded(flex:2, child: Text('Độ Ẩm',     textAlign: TextAlign.center, style: GoogleFonts.poppins(color: SettingsService.textColor, fontWeight: FontWeight.w600, fontSize: 11))),
+            Expanded(flex:2, child: Text('Gió',        textAlign: TextAlign.center, style: GoogleFonts.poppins(color: SettingsService.textColor, fontWeight: FontWeight.w600, fontSize: 11))),
+            Expanded(flex:1, child: Text('UV',         textAlign: TextAlign.center, style: GoogleFonts.poppins(color: SettingsService.textColor, fontWeight: FontWeight.w600, fontSize: 11))),
           ]),
         ),
         // Rows
@@ -408,21 +413,21 @@ class ContentScreen extends StatelessWidget {
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: i.isEven ? Colors.white.withValues(alpha: 0.03) : Colors.transparent,
+              color: i.isEven ? SettingsService.cardBorderColor : Colors.transparent,
               borderRadius: i == weathers.length - 1 ? const BorderRadius.vertical(bottom: Radius.circular(20)) : null,
-              border: i < weathers.length - 1 ? Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.06))) : null,
+              border: i < weathers.length - 1 ? Border(bottom: BorderSide(color: SettingsService.cardBorderColor)) : null,
             ),
             child: Row(children: [
               Expanded(flex:3, child: Text(w.city, style: GoogleFonts.poppins(
-                color: const Color(0xFFE0D9FF), fontSize: 12, fontWeight: FontWeight.w500))),
+                color: SettingsService.accentTitleColor, fontSize: 12, fontWeight: FontWeight.w500))),
               Expanded(flex:2, child: Text('${isCelsius ? w.temperature.toInt() : (w.temperature * 9 / 5 + 32).toInt()}°', textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12))),
+                style: GoogleFonts.poppins(color: SettingsService.textDimColor, fontSize: 12))),
               Expanded(flex:2, child: Text('${w.humidity.toInt()}%', textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12))),
+                style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 12))),
               Expanded(flex:2, child: Text('${w.windSpeed.toInt()}', textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12))),
+                style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 12))),
               Expanded(flex:1, child: Text('${w.uvIndex}', textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(color: w.uvIndex >= 7 ? Colors.orange : Colors.white38, fontSize: 12, fontWeight: FontWeight.bold))),
+                style: GoogleFonts.poppins(color: w.uvIndex >= 7 ? Colors.orange : SettingsService.textMutedColor, fontSize: 12, fontWeight: FontWeight.bold))),
             ]),
           );
         }),
@@ -435,23 +440,23 @@ class ContentScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1F1D47).withValues(alpha: 0.95),
-        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+        color: SettingsService.footerBgColor,
+        border: Border(top: BorderSide(color: SettingsService.cardBorderColor)),
       ),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Row(children: [
-          const Icon(Icons.school_rounded, size: 12, color: Color(0xFFE0D9FF)),
+          Icon(Icons.school_rounded, size: 12, color: SettingsService.accentTitleColor),
           const SizedBox(width: 6),
           Text('Phenikaa University', style: GoogleFonts.poppins(
-            fontSize: 11, color: const Color(0xFFE0D9FF), fontWeight: FontWeight.w600)),
+            fontSize: 11, color: SettingsService.accentTitleColor, fontWeight: FontWeight.w600)),
         ]),
         const SizedBox(height: 3),
         Text('Dương Ngọc Tú • Ngô Thành Long • Lê Minh Quang',
-          style: GoogleFonts.poppins(fontSize: 9, color: Colors.white38)),
+          style: GoogleFonts.poppins(fontSize: 9, color: SettingsService.textMutedColor)),
       ]),
     );
   }
 
   Widget _sectionLabel(String text) => Text(text, style: GoogleFonts.poppins(
-    color: const Color(0xFFE0D9FF), fontSize: 14, fontWeight: FontWeight.w700));
+    color: SettingsService.accentTitleColor, fontSize: 14, fontWeight: FontWeight.w700));
 }

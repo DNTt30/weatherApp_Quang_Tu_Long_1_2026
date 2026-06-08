@@ -6,7 +6,13 @@ class FirestoreService {
   CollectionReference get cities =>
       FirebaseFirestore.instance.collection('cities');
 
-  // ==========================================
+  // Collection Reference cho 'weather'
+  CollectionReference get weather =>
+      FirebaseFirestore.instance.collection('weather');
+
+  // Collection Reference cho 'forecasts'
+  CollectionReference get forecasts =>
+      FirebaseFirestore.instance.collection('forecasts');
   // 1. CRUD cho danh sách Thành Phố (cities collection)
   // ==========================================
 
@@ -15,6 +21,22 @@ class FirestoreService {
     return await cities.add({
       ...cityData,
       'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // [C]reate / Update: Lưu thông tin thời tiết vào Firestore (Quang phụ trách)
+  Future<void> saveWeather(String cityName, Map<String, dynamic> weatherData) async {
+    await weather.doc(cityName).set({
+      ...weatherData,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // [C]reate / Update: Lưu thông tin dự báo vào Firestore (Tú phụ trách)
+  Future<void> saveForecast(String cityName, List<Map<String, dynamic>> forecastData) async {
+    await forecasts.doc(cityName).set({
+      'data': forecastData,
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
@@ -73,5 +95,41 @@ class FirestoreService {
         .get();
 
     return querySnapshot.docs.map((doc) => doc.id).toList();
+  }
+
+  // ==========================================
+  // 3. Lịch sử Hoạt động (Search History)
+  // ==========================================
+
+  // Ghi lại lịch sử xem thành phố
+  Future<void> saveSearchHistory(String cityName) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    // Sử dụng docId tự động để tạo bản ghi mới mỗi lần tìm kiếm
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('history')
+        .add({
+      'cityName': cityName,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Lấy lịch sử xem (giới hạn 10 bản ghi gần nhất)
+  Future<List<Map<String, dynamic>>> getSearchHistory() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return [];
+
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('history')
+        .orderBy('timestamp', descending: true)
+        .limit(10)
+        .get();
+
+    return querySnapshot.docs.map((doc) => doc.data()).toList();
   }
 }

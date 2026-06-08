@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../service/settings_service.dart';
+import '../service/firestore_service.dart';
 
 // ============================================================
 // AboutScreen — Tú phụ trách (Cài đặt, Thông tin, Đăng xuất)
@@ -12,16 +13,19 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF2E335A), Color(0xFF1C1B33)],
-        ),
-      ),
-      child: Column(
-        children: [
+    return ValueListenableBuilder<bool>(
+      valueListenable: SettingsService.isLightMode,
+      builder: (context, isLight, _) {
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [SettingsService.bgGradientTop, SettingsService.bgGradientBottom],
+            ),
+          ),
+          child: Column(
+            children: [
           // ── Content ─────────────────────────────────────
           Expanded(
             child: SingleChildScrollView(
@@ -45,6 +49,21 @@ class AboutScreen extends StatelessWidget {
                   _buildTechStack(),
                   const SizedBox(height: 30),
 
+                  _sectionLabel('Thành Phố Yêu Thích'),
+                  const SizedBox(height: 12),
+                  _buildFavoritesList(),
+                  const SizedBox(height: 24),
+
+                  _sectionLabel('Lịch Sử Hoạt Động ("Câu chuyện User")'),
+                  const SizedBox(height: 12),
+                  _buildSearchHistory(),
+                  const SizedBox(height: 24),
+
+                  _sectionLabel('Nguồn Dữ Liệu (Data Source)'),
+                  const SizedBox(height: 12),
+                  _buildDataSource(),
+                  const SizedBox(height: 30),
+
                   _buildSettingsAndLogout(context),
                   const SizedBox(height: 20),
                 ],
@@ -57,6 +76,8 @@ class AboutScreen extends StatelessWidget {
         ],
       ),
     );
+      },
+    );
   }
 
   // ── Profile Card (Mới) ────────────────────────────────────
@@ -67,9 +88,9 @@ class AboutScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: SettingsService.cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: SettingsService.cardBorderColor),
       ),
       child: Row(
         children: [
@@ -79,7 +100,7 @@ class AboutScreen extends StatelessWidget {
               color: const Color(0xFFC427FB).withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.person_rounded, color: Color(0xFFE0D9FF), size: 36),
+            child: Icon(Icons.person_rounded, color: SettingsService.accentTitleColor, size: 36),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -88,13 +109,13 @@ class AboutScreen extends StatelessWidget {
               children: [
                 Text('Hồ Sơ Cá Nhân',
                     style: GoogleFonts.poppins(
-                        color: Colors.white54,
+                        color: SettingsService.textMutedColor,
                         fontSize: 12,
                         fontWeight: FontWeight.w500)),
                 const SizedBox(height: 4),
                 Text(userEmail,
                     style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: SettingsService.textColor,
                         fontSize: 16,
                         fontWeight: FontWeight.w700)),
               ],
@@ -111,16 +132,16 @@ class AboutScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF5936B4), Color(0xFF362A84)],
+          colors: [SettingsService.primaryGradientStart, SettingsService.primaryGradientEnd],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+        border: Border.all(color: SettingsService.cardBorderColor),
         boxShadow: [
           BoxShadow(
-              color: const Color(0xFF48319D).withValues(alpha: 0.4),
+              color: SettingsService.primaryGradientStart.withValues(alpha: 0.4),
               blurRadius: 16,
               offset: const Offset(0, 6))
         ],
@@ -131,7 +152,7 @@ class AboutScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.1),
+              color: SettingsService.cardBorderColor,
             ),
             child: const Icon(Icons.cloud_done_rounded,
                 size: 48, color: Color(0xFFFFD700)),
@@ -139,18 +160,18 @@ class AboutScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Text('Weather App',
               style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: SettingsService.textColor,
                   fontSize: 24,
                   fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Text('Phiên bản 1.0.0',
               style: GoogleFonts.poppins(
-                  color: const Color(0xFFE0D9FF), fontSize: 13)),
+                  color: SettingsService.accentTitleColor, fontSize: 13)),
           const SizedBox(height: 16),
           Text(
             'Ứng dụng theo dõi thời tiết chính xác, nhanh chóng được xây dựng bởi Nhóm 1 - Đại học Phenikaa.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+            style: GoogleFonts.poppins(color: SettingsService.textDimColor, fontSize: 12),
           ),
         ],
       ),
@@ -189,9 +210,9 @@ class AboutScreen extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.07),
+            color: SettingsService.cardColor,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: SettingsService.cardBorderColor),
           ),
           child: Row(
             children: [
@@ -211,19 +232,19 @@ class AboutScreen extends StatelessWidget {
                   children: [
                     Text(member['name'] as String,
                         style: GoogleFonts.poppins(
-                            color: Colors.white,
+                            color: SettingsService.textColor,
                             fontSize: 14,
                             fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),
                     Text(member['role'] as String,
                         style: GoogleFonts.poppins(
-                            color: Colors.white54, fontSize: 11)),
+                            color: SettingsService.textMutedColor, fontSize: 11)),
                   ],
                 ),
               ),
               Text(member['id'] as String,
                   style: GoogleFonts.poppins(
-                      color: const Color(0xFFE0D9FF),
+                      color: SettingsService.accentTitleColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w600)),
             ],
@@ -253,9 +274,9 @@ class AboutScreen extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: SettingsService.cardColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            border: Border.all(color: SettingsService.dividerColor),
           ),
           child: Row(
             children: [
@@ -264,13 +285,136 @@ class AboutScreen extends StatelessWidget {
               const SizedBox(width: 10),
               Text(t['label'] as String,
                   style: GoogleFonts.poppins(
-                      color: Colors.white70,
+                      color: SettingsService.textDimColor,
                       fontSize: 13,
                       fontWeight: FontWeight.w500)),
             ],
           ),
         );
       }).toList(),
+    );
+  }
+
+  // ── Favorite Cities (Giao diện sáng) ──────────────────────
+  Widget _buildFavoritesList() {
+    return FutureBuilder<List<String>>(
+      future: FirestoreService().getFavoriteCities(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator());
+        final favorites = snapshot.data!;
+        if (favorites.isEmpty) {
+          return Text('Chưa có thành phố yêu thích', style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 12));
+        }
+        return Column(
+          children: favorites.map((city) => Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              // Giao diện sáng hơn cho dễ nhìn
+              color: SettingsService.cardBorderColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: SettingsService.cardBorderColor),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.star_rounded, color: Color(0xFFFFD700), size: 22),
+                const SizedBox(width: 14),
+                Text(city, style: GoogleFonts.poppins(color: SettingsService.textColor, fontSize: 15, fontWeight: FontWeight.w600)),
+              ],
+            ),
+          )).toList(),
+        );
+      },
+    );
+  }
+
+  // ── Lịch sử Hoạt động (Search History) ────────────────────
+  Widget _buildSearchHistory() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: FirestoreService().getSearchHistory(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator());
+        final history = snapshot.data!;
+        if (history.isEmpty) {
+          return Text('Hôm nay chưa có hoạt động nào.', style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 12));
+        }
+        return Column(
+          children: history.map((record) {
+            final cityName = record['cityName'] as String;
+            final timestamp = record['timestamp'];
+            // Xử lý thời gian (firestore trả về Timestamp)
+            String timeStr = "Vừa xong";
+            if (timestamp != null) {
+              final DateTime dt = timestamp.toDate();
+              timeStr = "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} - ${dt.day}/${dt.month}";
+            }
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: SettingsService.cardColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: SettingsService.dividerColor),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.history_rounded, color: Colors.greenAccent, size: 20),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Đã xem thời tiết $cityName', style: GoogleFonts.poppins(color: SettingsService.textColor, fontSize: 14, fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 2),
+                        Text(timeStr, style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  // ── Data Source (Nguồn dữ liệu) ───────────────────────────
+  Widget _buildDataSource() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: SettingsService.cardBorderColor, // Giao diện sáng
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: SettingsService.cardBorderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.cloud_sync_rounded, color: Color(0xFF83B4FF), size: 22),
+              const SizedBox(width: 10),
+              Text('API Thời Tiết', style: GoogleFonts.poppins(color: SettingsService.textColor, fontSize: 14, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text('• Open-Meteo API', style: GoogleFonts.poppins(color: SettingsService.textDimColor, fontSize: 13, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              const Icon(Icons.storage_rounded, color: Colors.orangeAccent, size: 22),
+              const SizedBox(width: 10),
+              Text('Cơ Sở Dữ Liệu (Database)', style: GoogleFonts.poppins(color: SettingsService.textColor, fontSize: 14, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text('• Firebase Firestore', style: GoogleFonts.poppins(color: SettingsService.textDimColor, fontSize: 13, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 4),
+          Text('  - Collections: users, cities, weather, forecasts', style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 12)),
+        ],
+      ),
     );
   }
 
@@ -284,9 +428,9 @@ class AboutScreen extends StatelessWidget {
         // Nhóm Tùy chỉnh (Đổi ngôn ngữ, Giao diện, Nhiệt độ, Cảnh báo)
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.07),
+            color: SettingsService.cardColor,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: SettingsService.cardBorderColor),
           ),
           child: Column(
             children: [
@@ -302,20 +446,19 @@ class AboutScreen extends StatelessWidget {
                 },
                 child: _buildSettingTile(Icons.language_rounded, 'Đổi ngôn ngữ', 'Tiếng Việt', showTopRadius: true),
               ),
-              Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
-              InkWell(
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Tính năng Đổi giao diện đang phát triển (v2.0)!', style: GoogleFonts.poppins()),
-                      backgroundColor: const Color(0xFFC427FB),
-                      duration: const Duration(seconds: 2),
-                    ),
+              Divider(height: 1, color: SettingsService.dividerColor),
+              ValueListenableBuilder<bool>(
+                valueListenable: SettingsService.isLightMode,
+                builder: (context, isLight, _) {
+                  return InkWell(
+                    onTap: () {
+                      SettingsService.toggleLightMode();
+                    },
+                    child: _buildSettingTile(Icons.dark_mode_rounded, 'Giao diện', isLight ? 'Sáng (Light)' : 'Tối (Dark)'),
                   );
                 },
-                child: _buildSettingTile(Icons.dark_mode_rounded, 'Giao diện', 'Tối (Dark)'),
               ),
-              Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+              Divider(height: 1, color: SettingsService.dividerColor),
               // Nút Đổi đơn vị nhiệt độ (C <-> F)
               ValueListenableBuilder<bool>(
                 valueListenable: SettingsService.isCelsius,
@@ -331,7 +474,7 @@ class AboutScreen extends StatelessWidget {
                   );
                 },
               ),
-              Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+              Divider(height: 1, color: SettingsService.dividerColor),
               // Nút Bật/tắt cảnh báo
               ValueListenableBuilder<bool>(
                 valueListenable: SettingsService.isNotificationEnabled,
@@ -357,9 +500,9 @@ class AboutScreen extends StatelessWidget {
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.04),
+            color: SettingsService.cardBorderColor,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: SettingsService.cardBorderColor),
           ),
           child: Column(
             children: [
@@ -390,7 +533,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+              Divider(height: 1, color: SettingsService.dividerColor),
 
               // Nút Đăng Xuất
               InkWell(
@@ -443,23 +586,23 @@ class AboutScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF48319D).withValues(alpha: 0.3),
+              color: SettingsService.primaryGradientStart.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 18, color: const Color(0xFFE0D9FF)),
+            child: Icon(icon, size: 18, color: SettingsService.accentTitleColor),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Text(title,
                 style: GoogleFonts.poppins(
-                    color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                    color: SettingsService.textColor, fontSize: 13, fontWeight: FontWeight.w500)),
           ),
           Text(trailing,
               style: GoogleFonts.poppins(
-                  color: Colors.white54, fontSize: 12)),
+                  color: SettingsService.textMutedColor, fontSize: 12)),
           const SizedBox(width: 6),
-          const Icon(Icons.chevron_right_rounded,
-              color: Colors.white38, size: 18),
+          Icon(Icons.chevron_right_rounded,
+              color: SettingsService.textMutedColor, size: 18),
         ],
       ),
     );
@@ -470,29 +613,29 @@ class AboutScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1F1D47).withValues(alpha: 0.95),
-        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+        color: SettingsService.footerBgColor,
+        border: Border(top: BorderSide(color: SettingsService.dividerColor)),
       ),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Row(children: [
-          const Icon(Icons.school_rounded, size: 12, color: Color(0xFFE0D9FF)),
+          Icon(Icons.school_rounded, size: 12, color: SettingsService.accentTitleColor),
           const SizedBox(width: 6),
           Text('Phenikaa University',
               style: GoogleFonts.poppins(
                   fontSize: 11,
-                  color: const Color(0xFFE0D9FF),
+                  color: SettingsService.accentTitleColor,
                   fontWeight: FontWeight.w600)),
         ]),
         const SizedBox(height: 3),
         Text('Dương Ngọc Tú • Ngô Thành Long • Lê Minh Quang',
-            style: GoogleFonts.poppins(fontSize: 9, color: Colors.white38)),
+            style: GoogleFonts.poppins(fontSize: 9, color: SettingsService.textMutedColor)),
       ]),
     );
   }
 
   Widget _sectionLabel(String text) => Text(text,
       style: GoogleFonts.poppins(
-          color: const Color(0xFFE0D9FF),
+          color: SettingsService.accentTitleColor,
           fontSize: 14,
           fontWeight: FontWeight.w700));
 
@@ -502,20 +645,20 @@ class AboutScreen extends StatelessWidget {
       context: context,
       builder: (BuildContext ctx) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF1C1B33),
+          backgroundColor: SettingsService.bgGradientBottom,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             'Xóa Tài Khoản',
-            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+            style: GoogleFonts.poppins(color: SettingsService.textColor, fontWeight: FontWeight.bold),
           ),
           content: Text(
             'Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản này không? Mọi dữ liệu (Thành phố yêu thích) sẽ bị xóa và không thể khôi phục.',
-            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
+            style: GoogleFonts.poppins(color: SettingsService.textDimColor, fontSize: 13),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text('Hủy', style: GoogleFonts.poppins(color: Colors.white54)),
+              child: Text('Hủy', style: GoogleFonts.poppins(color: SettingsService.textMutedColor)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -538,7 +681,7 @@ class AboutScreen extends StatelessWidget {
                   }
                 }
               },
-              child: Text('Xóa Vĩnh Viễn', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: Text('Xóa Vĩnh Viễn', style: GoogleFonts.poppins(color: SettingsService.textColor, fontWeight: FontWeight.bold)),
             ),
           ],
         );

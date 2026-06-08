@@ -11,6 +11,7 @@ import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'service/auth_service.dart';
 import 'service/weather_data_manager.dart';
+import 'service/settings_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -105,7 +106,7 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: const Color(0xFF1C1B33),
+        backgroundColor: SettingsService.scaffoldBgColor,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -119,30 +120,33 @@ class _MainShellState extends State<MainShell> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF1C1B33),
-      // ── AppBar ──────────────────────────────────────────────
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF2E335A),
-        elevation: 0,
-        centerTitle: true,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.wb_sunny_rounded,
-                color: Color(0xFFFFB300), size: 22),
-            const SizedBox(width: 8),
-            Text(
-              _titles[_currentIndex],
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 20,
-              ),
+    return ValueListenableBuilder<bool>(
+      valueListenable: SettingsService.isLightMode,
+      builder: (context, isLight, _) {
+        return Scaffold(
+          backgroundColor: SettingsService.scaffoldBgColor,
+          // ── AppBar ──────────────────────────────────────────────
+          appBar: AppBar(
+            backgroundColor: SettingsService.bgGradientTop,
+            elevation: 0,
+            centerTitle: true,
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.wb_sunny_rounded,
+                    color: Color(0xFFFFB300), size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  _titles[_currentIndex],
+                  style: GoogleFonts.poppins(
+                    color: SettingsService.textColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
       // ── 3 màn hình dùng IndexedStack (giữ state) ────────────
       body: IndexedStack(
         index: _currentIndex,
@@ -153,6 +157,8 @@ class _MainShellState extends State<MainShell> {
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
       ),
+    );
+      },
     );
   }
 }
