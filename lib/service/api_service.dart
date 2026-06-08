@@ -5,6 +5,30 @@ import '../models/forecast.dart';
 
 class ApiService {
   static const String _baseUrl = 'https://api.open-meteo.com/v1/forecast';
+  static const String _geocodingUrl = 'https://geocoding-api.open-meteo.com/v1/search';
+
+  // Lấy dữ liệu tọa độ từ tên thành phố
+  Future<Map<String, dynamic>?> geocodeCity(String cityName) async {
+    final url = Uri.parse('$_geocodingUrl?name=$cityName&count=1&language=en&format=json');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['results'] != null && data['results'].isNotEmpty) {
+          final result = data['results'][0];
+          return {
+            'name': result['name'],
+            'country': result['country'] ?? '',
+            'lat': result['latitude'],
+            'lon': result['longitude'],
+          };
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 
   // Lấy dữ liệu thời tiết và dự báo tổng hợp từ Open-Meteo
   Future<Map<String, dynamic>> fetchWeatherData(double lat, double lon, String cityName) async {

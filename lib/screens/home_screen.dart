@@ -190,22 +190,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Icon(Icons.location_on_rounded, color: SettingsService.accentTitleColor, size: 16),
+              Icon(Icons.location_on_rounded, color: Colors.white.withValues(alpha: 0.9), size: 16),
               const SizedBox(width: 4),
               Text(city.name, style: GoogleFonts.poppins(
-                color: SettingsService.textColor, fontSize: 22, fontWeight: FontWeight.bold)),
+                color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(width: 6),
               GestureDetector(
                 onTap: () => _toggleFavorite(_selectedCityIndex),
                 child: Icon(
                   city.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
-                  color: city.isFavorite ? const Color(0xFFFFD700) : SettingsService.textMutedColor,
+                  color: city.isFavorite ? const Color(0xFFFFD700) : Colors.white60,
                   size: 20,
                 ),
               ),
             ]),
             Text(city.getCityInfo().split('|').last.trim(),
-              style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 10)),
+              style: GoogleFonts.poppins(color: Colors.white70, fontSize: 10)),
           ])),
           Text(_statusEmoji(weather.status), style: const TextStyle(fontSize: 48)),
         ]),
@@ -218,14 +218,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           child: Text(
             weather.formatTemperature(fahrenheit: !isCelsius),
             style: GoogleFonts.poppins(
-              color: SettingsService.textColor, fontSize: 68,
+              color: Colors.white, fontSize: 68,
               fontWeight: FontWeight.w200, height: 1),
           ),
         ),
         Align(
           alignment: Alignment.centerLeft,
           child: Text(weather.status, style: GoogleFonts.poppins(
-            color: SettingsService.accentTitleColor, fontSize: 16)),
+            color: Colors.white.withValues(alpha: 0.9), fontSize: 16)),
         ),
 
         const SizedBox(height: 16),
@@ -246,12 +246,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             width: double.infinity,
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFC427FB).withValues(alpha: 0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFC427FB).withValues(alpha: 0.4)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
             ),
             child: Text(warning, style: GoogleFonts.poppins(
-              color: SettingsService.accentTitleColor, fontSize: 11)),
+              color: Colors.white, fontSize: 11)),
           ),
         ],
       ]),

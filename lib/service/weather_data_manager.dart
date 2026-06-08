@@ -27,7 +27,31 @@ class WeatherDataManager {
     isLoading = true;
     allCitiesData.clear();
 
-    for (var c in _baseCities) {
+    final firestore = FirestoreService();
+    List<Map<String, dynamic>> citiesToLoad = List.from(_baseCities);
+
+    try {
+      final history = await firestore.getSearchHistory();
+      if (history.isNotEmpty) {
+        final lastSearch = history.first;
+        if (lastSearch['lat'] != null && lastSearch['lon'] != null) {
+          // Xóa city này nếu nó nằm trong baseCities để tránh trùng lặp
+          citiesToLoad.removeWhere((c) => c['city'] == lastSearch['cityName']);
+          
+          // Thêm lên đầu danh sách
+          citiesToLoad.insert(0, {
+            'city': lastSearch['cityName'],
+            'lat': lastSearch['lat'],
+            'lon': lastSearch['lon'],
+            'country': '', // Geocoding data stored might not have it, but ok
+          });
+        }
+      }
+    } catch (e) {
+      // Bỏ qua lỗi nếu chưa có lịch sử
+    }
+
+    for (var c in citiesToLoad) {
       try {
         final data = await _apiService.fetchWeatherData(c['lat'], c['lon'], c['city']);
         

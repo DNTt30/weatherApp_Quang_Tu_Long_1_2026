@@ -12,6 +12,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'service/auth_service.dart';
 import 'service/weather_data_manager.dart';
 import 'service/settings_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,6 +81,25 @@ class _MainShellState extends State<MainShell> {
   }
 
   Future<void> _loadInitialData() async {
+    // 1. Load User Settings
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        if (doc.exists) {
+          final data = doc.data()!;
+          final isDark = data['darkMode'] ?? true;
+          final unit = data['temperatureUnit'] ?? 'C';
+          
+          SettingsService.isLightMode.value = !isDark;
+          SettingsService.isCelsius.value = (unit == 'C');
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    // 2. Load Weather Data
     await WeatherDataManager().loadAllData();
     if (mounted) {
       setState(() {

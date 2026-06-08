@@ -113,7 +113,7 @@ class FirestoreService {
   // ==========================================
 
   // Ghi lại lịch sử xem thành phố
-  Future<void> saveSearchHistory(String cityName) async {
+  Future<void> saveSearchHistory(String cityName, {double? lat, double? lon}) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
@@ -124,6 +124,8 @@ class FirestoreService {
         .collection('history')
         .add({
       'cityName': cityName,
+      if (lat != null) 'lat': lat,
+      if (lon != null) 'lon': lon,
       'timestamp': FieldValue.serverTimestamp(),
     });
   }

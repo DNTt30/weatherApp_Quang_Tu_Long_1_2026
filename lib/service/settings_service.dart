@@ -32,9 +32,9 @@ class SettingsService {
   static Color get bgGradientTop => isLightMode.value ? const Color(0xFFE0E5FF) : const Color(0xFF2E335A);
   static Color get bgGradientBottom => isLightMode.value ? const Color(0xFFF3F5FF) : const Color(0xFF1C1B33);
   // Typography Colors
-  static Color get textColor => isLightMode.value ? Colors.black87 : Colors.white;
+  static Color get textColor => isLightMode.value ? Colors.black : Colors.white;
   static Color get textDimColor => isLightMode.value ? Colors.black87 : Colors.white70;
-  static Color get textMutedColor => isLightMode.value ? Colors.black54 : Colors.white54;
+  static Color get textMutedColor => isLightMode.value ? Colors.black87.withValues(alpha: 0.7) : Colors.white54;
   static Color get cardColor => isLightMode.value ? Colors.white.withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.05);
   static Color get cardBorderColor => isLightMode.value ? Colors.white.withValues(alpha: 0.9) : Colors.white.withValues(alpha: 0.1);
   static Color get dividerColor => isLightMode.value ? Colors.black12 : Colors.white.withValues(alpha: 0.08);

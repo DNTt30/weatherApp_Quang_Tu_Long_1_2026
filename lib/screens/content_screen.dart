@@ -5,13 +5,21 @@ import '../models/weather.dart';
 import '../service/settings_service.dart';
 import '../service/weather_data_manager.dart';
 import '../service/firestore_service.dart';
+import '../service/api_service.dart';
 
 // ============================================================
 // ContentScreen — Long phụ trách
 // Cảnh báo thời tiết | Tốc độ gió, độ ẩm, UV | Dự báo 5 ngày 
 // ============================================================
-class ContentScreen extends StatelessWidget {
+class ContentScreen extends StatefulWidget {
   const ContentScreen({super.key});
+
+  @override
+  State<ContentScreen> createState() => _ContentScreenState();
+}
+
+class _ContentScreenState extends State<ContentScreen> {
+  bool _isSearching = false;
 
   @override
   Widget build(BuildContext context) {
@@ -118,10 +126,66 @@ class ContentScreen extends StatelessWidget {
             borderSide: const BorderSide(color: Color(0xFFC427FB)),
           ),
         ),
-        onSubmitted: (value) {
-          if (value.trim().isNotEmpty) {
-            FirestoreService().saveSearchHistory(value.trim());
-            // In a real app, this would trigger a weather search.
+        onSubmitted: (value) async {
+          final query = value.trim();
+          if (query.isNotEmpty) {
+            setState(() {
+              _isSearching = true;
+            });
+            
+            final apiService = ApiService();
+            final geocodeData = await apiService.geocodeCity(query);
+            
+            if (geocodeData != null) {
+              final double lat = geocodeData['lat'];
+              final double lon = geocodeData['lon'];
+              final String cityName = geocodeData['name'];
+              final String country = geocodeData['country'];
+              
+              try {
+                final weatherResult = await apiService.fetchWeatherData(lat, lon, cityName);
+                
+                final Weather weather = weatherResult['weather'];
+                final List<Forecast> forecasts = weatherResult['forecasts'];
+                
+                final firestore = FirestoreService();
+                await firestore.saveCity(cityName, {
+                  'name': cityName,
+                  'country': country,
+                  'latitude': lat,
+                  'longitude': lon,
+                });
+                
+                await firestore.saveWeather(cityName, weather.toMap());
+                await firestore.saveForecast(cityName, forecasts.map((e) => e.toMap()).toList());
+                
+                // Ghi lại lịch sử có tọa độ để đề xuất lần sau
+                await firestore.saveSearchHistory(cityName, lat: lat, lon: lon);
+                
+                final dataManager = WeatherDataManager();
+                
+                // Xóa cũ nếu đã tồn tại
+                dataManager.allCitiesData.removeWhere((element) => element['city'] == cityName);
+                
+                // Đẩy lên đầu danh sách
+                dataManager.allCitiesData.insert(0, {
+                  'city': cityName,
+                  'lat': lat,
+                  'lon': lon,
+                  'weather': weather,
+                  'forecasts': forecasts,
+                });
+                
+              } catch (e) {
+                // handle error silently or show snackbar
+              }
+            }
+            
+            if (mounted) {
+              setState(() {
+                _isSearching = false;
+              });
+            }
           }
         },
       ),
