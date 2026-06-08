@@ -35,8 +35,9 @@ class BottomNavBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _NavItem(icon: Icons.home_outlined,      activeIcon: Icons.home_rounded,      label: 'Home',     isSelected: currentIndex == 0, onTap: () => onTap(0)),
-              _NavItem(icon: Icons.cloud_outlined,     activeIcon: Icons.cloud_rounded,     label: 'Forecast', isSelected: currentIndex == 1, onTap: () => onTap(1)),
-              _NavItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'More',     isSelected: currentIndex == 2, onTap: () => onTap(2)),
+              _NavItem(icon: Icons.explore_outlined,   activeIcon: Icons.explore_rounded,   label: 'Discover', isSelected: currentIndex == 1, onTap: () => onTap(1)),
+              _NavItem(icon: Icons.cloud_outlined,     activeIcon: Icons.cloud_rounded,     label: 'Forecast', isSelected: currentIndex == 2, onTap: () => onTap(2)),
+              _NavItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'More',     isSelected: currentIndex == 3, onTap: () => onTap(3)),
             ],
           ),
         ),

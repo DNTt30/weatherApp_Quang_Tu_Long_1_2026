@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'screens/home_screen.dart';
 import 'screens/content_screen.dart';
 import 'screens/about_screen.dart';
+import 'screens/discover_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'widgets/bottom_nav_bar.dart';
@@ -113,11 +114,12 @@ class _MainShellState extends State<MainShell> {
   }
 
   // Tiêu đề AppBar theo từng tab
-  final List<String> _titles = ['Home', 'Forecast', 'More'];
+  final List<String> _titles = ['Home', 'Discover', 'Forecast', 'More'];
 
-  // 3 màn hình chính của app
+  // 4 màn hình chính của app
   final List<Widget> _screens = const [
     HomeScreen(),     // Long's screen
+    DiscoverScreen(), // Agoda-inspired Travel/Weather mockup
     ContentScreen(),  // Quang's screen
     AboutScreen(),    // Tú's screen
   ];
