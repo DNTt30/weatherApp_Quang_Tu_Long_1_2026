@@ -81,7 +81,8 @@ lib/
     └── shared_widgets.dart      # GroupPhotoHeader, MemberInfoFooter, AppConstants
 
 test/
-└── widget_test.dart             # 25 Unit Tests (Model + Business Logic + Widget)
+├── widget_test.dart             # 25 Unit Tests (Model + Business Logic + Widget)
+└── api_service_test.dart        # 4 Unit Tests (Autocomplete, NFD/NFC Normalization, Ranking, Deduplication)
 ```
 
 ---
@@ -388,7 +389,7 @@ flutter test
 
 ---
 
-## 🧪 Unit Tests (25 Test Cases)
+## 🧪 Unit Tests (29 Test Cases)
 
 | Nhóm | Số test | Mô tả |
 |------|---------|-------|
@@ -397,7 +398,8 @@ flutter test
 | City Model | 3 | Khởi tạo, danh sách, edge case |
 | Business Logic | 6 | Phân loại thời tiết, tính toán thống kê |
 | Widget Tests | 5 | LoginScreen, WeatherCard, BottomNav, AppBar |
-| **Tổng** | **25** | |
+| ApiService Autocomplete | 4 | Gợi ý tự động, chuẩn hóa NFC/NFD, sắp xếp rank, lọc trùng |
+| **Tổng** | **29** | |
 
 ---
 
@@ -471,7 +473,8 @@ flutter test
 - [x] Kết nối Firestore NoSQL (addCity)
 - [x] Bottom Navigation Bar (3 tab, IndexedStack)
 - [x] GroupPhotoHeader & MemberInfoFooter trên tất cả màn hình
-- [x] 25 Unit Tests (flutter test)
+- [x] Tìm kiếm chính xác & Gợi ý Autocomplete (chuẩn hóa tiếng Việt NFD/NFC)
+- [x] 29 Unit Tests (flutter test)
 - [x] Git Repository public
 - [ ] Demo YouTube video
 - [ ] Báo cáo in chuẩn Phenikaa
