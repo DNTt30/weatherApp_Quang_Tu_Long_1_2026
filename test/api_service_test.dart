@@ -16,7 +16,7 @@ void main() {
 
     test('TC-27: geocodeSuggestions nhận diện và chuẩn hóa tiếng Việt dạng tổ hợp (NFD)', () async {
       // Chuỗi "hà nam" dạng tổ hợp NFD
-      final String nfdQuery = 'h' + 'a' + '\u0300' + ' ' + 'n' + 'a' + 'm';
+      final String nfdQuery = 'ha\u0300 nam';
       
       final results = await apiService.geocodeSuggestions(nfdQuery);
       
