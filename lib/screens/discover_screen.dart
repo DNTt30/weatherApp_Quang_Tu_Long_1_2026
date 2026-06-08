@@ -42,16 +42,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   _buildBrandHeader(isLightMode),
                   const SizedBox(height: 18),
 
-                  // ── GRID SERVICES (Mockup Agoda Cards) ───────────────────
+                  // ── GRID SERVICES (Mockup adapted to Weather app) ────────
                   _buildServiceGrid(isLightMode, cardBgColor),
                   const SizedBox(height: 20),
 
-                  // ── QUICK ICON SERVICES ROW ──────────────────────────────
+                  // ── QUICK ICON SERVICES ROW (Weather themed params) ──────
                   _buildQuickIconRow(isLightMode),
                   const SizedBox(height: 22),
 
-                  // ── MOCKUP COUPON BANNER ─────────────────────────────────
-                  _buildCouponBanner(isLightMode),
+                  // ── MOCKUP ALERT/TIP BANNER ──────────────────────────────
+                  _buildAlertBanner(isLightMode),
                   const SizedBox(height: 22),
 
                   // ── CONTINUE TRACKING SECTION ────────────────────────────
@@ -147,21 +147,21 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  // Agoda-style Grid Cards: 2 Large cards on top, 3 smaller cards below
+  // Agoda-style Grid Cards adapted to Weather content
   Widget _buildServiceGrid(bool isLightMode, Color cardBg) {
     return Column(
       children: [
-        // Row 1: Hotels & Flights
+        // Row 1: Weather Tourism & Precipitation Map
         Row(
           children: [
             Expanded(
               child: _buildLargeServiceCard(
-                title: 'Khách sạn',
-                subtitle: 'Tìm nơi trú ẩn lý tưởng',
-                badge: 'Hot Deal',
+                title: 'Thời tiết Du lịch',
+                subtitle: 'Điểm đến lý tưởng hôm nay',
+                badge: 'Gợi ý',
                 gradientStart: const Color(0xFFFFEBEB),
                 gradientEnd: const Color(0xFFFFCDCD),
-                icon: Icons.hotel_rounded,
+                icon: Icons.beach_access_rounded,
                 iconColor: const Color(0xFFE57373),
                 isLightMode: isLightMode,
               ),
@@ -169,12 +169,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: _buildLargeServiceCard(
-                title: 'Vé máy bay',
-                subtitle: 'Săn vé hành trình tốt nhất',
-                badge: 'Fly Safe',
+                title: 'Bản đồ Mưa & Mây',
+                subtitle: 'Vệ tinh đám mây thời gian thực',
+                badge: 'Radar',
                 gradientStart: const Color(0xFFF3E5F5),
                 gradientEnd: const Color(0xFFE1BEE7),
-                icon: Icons.flight_takeoff_rounded,
+                icon: Icons.radar_rounded,
                 iconColor: const Color(0xFFBA68C8),
                 isLightMode: isLightMode,
               ),
@@ -182,13 +182,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        // Row 2: Flight + Hotel, Activities, Homes & Apts
+        // Row 2: Air Quality, UV Index, Health weather
         Row(
           children: [
             Expanded(
               child: _buildSmallServiceCard(
-                title: 'Flight + Hotel',
-                icon: Icons.card_travel_rounded,
+                title: 'Chất lượng Khí',
+                icon: Icons.air_rounded,
                 gradientStart: const Color(0xFFE3F2FD),
                 gradientEnd: const Color(0xFFBBDEFB),
                 iconColor: const Color(0xFF64B5F6),
@@ -198,8 +198,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: _buildSmallServiceCard(
-                title: 'Trải nghiệm',
-                icon: Icons.local_activity_rounded,
+                title: 'Chỉ số UV',
+                icon: Icons.wb_sunny_rounded,
                 gradientStart: const Color(0xFFFFF8E1),
                 gradientEnd: const Color(0xFFFFECB3),
                 iconColor: const Color(0xFFFFB74D),
@@ -209,8 +209,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: _buildSmallServiceCard(
-                title: 'Homestay',
-                icon: Icons.home_work_rounded,
+                title: 'Sức khỏe',
+                icon: Icons.health_and_safety_rounded,
                 gradientStart: const Color(0xFFE8F5E9),
                 gradientEnd: const Color(0xFFC8E6C9),
                 iconColor: const Color(0xFF81C784),
@@ -382,14 +382,14 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  // Row of smaller icons (Agoda mini options)
+  // Row of smaller icons adapted to weather parameters/warning options
   Widget _buildQuickIconRow(bool isLightMode) {
     final items = [
-      {'label': 'Sân bay', 'icon': Icons.local_airport_rounded, 'color': Colors.blue},
-      {'label': 'Thuê xe', 'icon': Icons.directions_car_rounded, 'color': Colors.indigo},
-      {'label': 'eSIM', 'icon': Icons.sim_card_rounded, 'color': Colors.orange},
-      {'label': 'Tàu hỏa', 'icon': Icons.train_rounded, 'color': Colors.teal},
-      {'label': 'Xe khách', 'icon': Icons.directions_bus_rounded, 'color': Colors.red},
+      {'label': 'Cảnh báo bão', 'icon': Icons.cyclone_rounded, 'color': Colors.red},
+      {'label': 'Độ ẩm khí', 'icon': Icons.water_drop_rounded, 'color': Colors.blue},
+      {'label': 'Tốc độ gió', 'icon': Icons.wind_power_rounded, 'color': Colors.teal},
+      {'label': 'Lượng mưa', 'icon': Icons.umbrella_rounded, 'color': Colors.indigo},
+      {'label': 'Lịch sử tìm', 'icon': Icons.history_rounded, 'color': Colors.orange},
     ];
 
     return Row(
@@ -434,8 +434,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  // Premium Coupon Banner (mockup voucher)
-  Widget _buildCouponBanner(bool isLightMode) {
+  // Premium Weather Alert / Tip Banner
+  Widget _buildAlertBanner(bool isLightMode) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -460,10 +460,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.08),
+              color: Colors.orange.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.local_offer_rounded, color: Colors.redAccent, size: 18),
+            child: const Icon(Icons.wb_sunny_rounded, color: Colors.orangeAccent, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -471,7 +471,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Giảm đến 18% thời tiết du lịch!',
+                  'Cảnh báo: Chỉ số UV đang rất cao!',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -479,7 +479,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   ),
                 ),
                 Text(
-                  'Nhập mã WEATHERGO khi đặt tour tuần này',
+                  'Hãy bôi kem chống nắng và mang ô khi ra ngoài',
                   style: GoogleFonts.poppins(
                     fontSize: 10,
                     color: isLightMode ? Colors.black54 : Colors.white60,
@@ -489,7 +489,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             ),
           ),
           Text(
-            'Nhận',
+            'Xem',
             style: GoogleFonts.poppins(
               color: Colors.blue.shade600,
               fontWeight: FontWeight.bold,
@@ -501,7 +501,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  // Thẻ "Tiếp tục chuẩn bị cho chuyến đi của bạn" (Continue planning your trip)
+  // Thẻ "Tiếp tục chuẩn bị cho chuyến đi của bạn" -> Adapt to Weather tracking
   Widget _buildContinueTrackingSection(
     bool isLightMode,
     Color cardBg,
@@ -522,7 +522,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Tiếp tục chuẩn bị cho chuyến đi của bạn',
+          'Khu vực quan tâm gần đây',
           style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.bold,
@@ -611,7 +611,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Dự báo: 12 Th06 - 16 Th06  •  2 khách',
+                            'Xem chi tiết thời tiết  •  Lịch sử tra cứu',
                             style: GoogleFonts.poppins(
                               fontSize: 10,
                               color: textMutedColor,
@@ -646,7 +646,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  // Thẻ "Ưu đãi thời tiết hôm nay" (See today's deals / Recommended Nearby Regions)
+  // Thẻ "Thời tiết các khu vực lân cận"
   Widget _buildNearbyRecommendationsSection(
     bool isLightMode,
     Color cardBg,
@@ -659,7 +659,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Ưu đãi thời tiết & Khu vực lân cận',
+          'Thời tiết các khu vực lân cận',
           style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.bold,
