@@ -9,7 +9,7 @@ class ApiService {
 
   // Lấy dữ liệu tọa độ từ tên thành phố
   Future<Map<String, dynamic>?> geocodeCity(String cityName) async {
-    final url = Uri.parse('$_geocodingUrl?name=$cityName&count=1&language=en&format=json');
+    final url = Uri.parse('$_geocodingUrl?name=${Uri.encodeComponent(cityName)}&count=1&language=en&format=json');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -21,8 +21,9 @@ class ApiService {
           
           // Chỉ chấp nhận các tỉnh thành phố thuộc Việt Nam
           if (countryLower.contains('vietnam') || countryLower.contains('việt nam') || countryLower.contains('viet nam')) {
+            final String name = _toNfc(result['name'] ?? '');
             return {
-              'name': result['name'],
+              'name': name,
               'country': country,
               'lat': result['latitude'],
               'lon': result['longitude'],
