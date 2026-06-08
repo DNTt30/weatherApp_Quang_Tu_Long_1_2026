@@ -139,7 +139,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         valueListenable: SettingsService.isCelsius,
         builder: (context, isCelsius, _) {
           return Column(children: [
-            _buildGroupHeader(),
             Expanded(
               child: FadeTransition(
                 opacity: _fadeAnim,
@@ -149,14 +148,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   child: Column(children: [
                     _buildMainCard(weather, selectedCity, isCelsius),
                     const SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     _buildHourlyForecast(isCelsius),
                     const SizedBox(height: 20),
                     _buildForecastList(forecasts, isCelsius),
                     const SizedBox(height: 20),
-                    _buildCityListSection(isCelsius),
-                    const SizedBox(height: 16),
-                    _buildAddCityBtn(),
-                    const SizedBox(height: 4),
                   ]),
                 ),
               ),
@@ -170,38 +166,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  // ── Group Photo Header ────────────────────────────────────
-  Widget _buildGroupHeader() {
-    return Container(
-      width: double.infinity, height: 100,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [SettingsService.primaryGradientStart, SettingsService.primaryGradientEnd],
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
-        ),
-      ),
-      child: Stack(children: [
-        Positioned(right: -20, top: -20, child: Container(width: 100, height: 100,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: SettingsService.cardBorderColor))),
-        Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.photo_camera_rounded, color: SettingsService.textMutedColor, size: 18),
-            const SizedBox(width: 8),
-            Text('Ảnh Nhóm', style: GoogleFonts.poppins(color: SettingsService.textDimColor, fontSize: 13, fontWeight: FontWeight.w500)),
-          ]),
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-            decoration: BoxDecoration(
-              color: SettingsService.cardBorderColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text('Long_Home', style: GoogleFonts.poppins(color: SettingsService.textColor, fontSize: 11, fontWeight: FontWeight.w700)),
-          ),
-        ])),
-      ]),
-    );
-  }
+
 
   // ── Main Weather Card ─────────────────────────────────────
   Widget _buildMainCard(Weather weather, City city, bool isCelsius) {
@@ -512,35 +477,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               size: 22,
             ),
           ),
-        ]),
-      ),
-    );
-  }
-
-  // ── Add City Button ───────────────────────────────────────
-  Widget _buildAddCityBtn() {
-    return GestureDetector(
-      onTap: () {
-        firestoreService.addCity({
-          'name': 'New City',
-          'temperature': 30,
-          'status': 'Clear',
-        });
-      },
-      child: Container(
-        width: double.infinity, height: 50,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [SettingsService.primaryGradientStart, SettingsService.primaryGradientEnd]),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(
-            color: const Color(0xFFC427FB).withValues(alpha: 0.3),
-            blurRadius: 12, offset: const Offset(0, 4))],
-        ),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.add_location_alt_rounded, color: SettingsService.textColor, size: 20),
-          const SizedBox(width: 8),
-          Text('Thêm vào Firestore', style: GoogleFonts.poppins(
-            color: SettingsService.textColor, fontWeight: FontWeight.w600, fontSize: 14)),
         ]),
       ),
     );

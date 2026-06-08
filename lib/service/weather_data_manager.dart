@@ -52,8 +52,9 @@ class WeatherDataManager {
           final firestore = FirestoreService();
           
           // Lưu City
-          firestore.addCity({
+          firestore.saveCity(c['city'].toString(), {
             'name': c['city'],
+            'country': c['country'], // Thêm quốc gia vào cho đủ dữ liệu
             'latitude': c['lat'],
             'longitude': c['lon'],
           });

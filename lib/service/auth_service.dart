@@ -35,6 +35,9 @@ class AuthService {
       'email': email.trim(),
       'username': username.trim(),
       'createdAt': FieldValue.serverTimestamp(),
+      'favoriteCities': [],
+      'temperatureUnit': 'C',
+      'darkMode': false,
     });
 
     return userCredential;

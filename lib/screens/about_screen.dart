@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:convert';
 import '../service/settings_service.dart';
 import '../service/firestore_service.dart';
+import '../service/weather_data_manager.dart';
+
+final ValueNotifier<bool> _isUploadingAvatar = ValueNotifier(false);
 
 // ============================================================
 // AboutScreen — Tú phụ trách (Cài đặt, Thông tin, Đăng xuất)
@@ -26,157 +32,368 @@ class AboutScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-          // ── Content ─────────────────────────────────────
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildProfileCard(),
-                  const SizedBox(height: 24),
-                  _buildAppInfoCard(),
-                  const SizedBox(height: 24),
-                  
-                  _sectionLabel('Thành Viên Nhóm 1'),
-                  const SizedBox(height: 12),
-                  _buildTeamList(),
-                  const SizedBox(height: 24),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      InkWell(
+                        onTap: () => _showBottomSheet(context, 'Hồ Sơ Cá Nhân', _buildProfileDetails()),
+                        borderRadius: BorderRadius.circular(24),
+                        child: _buildProfileCard(),
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      _sectionLabel('Thông Tin & Lịch Sử'),
+                      const SizedBox(height: 12),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: SettingsService.cardColor,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: SettingsService.cardBorderColor),
+                        ),
+                        child: Column(
+                          children: [
+                            InkWell(
+                              onTap: () => _showBottomSheet(context, 'Thành Viên Nhóm 1', _buildTeamList()),
+                              child: _buildSettingTile(Icons.groups_rounded, 'Thành Viên Nhóm', 'Chi tiết', showTopRadius: true),
+                            ),
+                            Divider(height: 1, color: SettingsService.dividerColor),
+                            InkWell(
+                              onTap: () => _showBottomSheet(context, 'Công Nghệ Sử Dụng', _buildTechStack()),
+                              child: _buildSettingTile(Icons.code_rounded, 'Công Nghệ Sử Dụng', 'Chi tiết'),
+                            ),
+                            Divider(height: 1, color: SettingsService.dividerColor),
+                            InkWell(
+                              onTap: () => _showBottomSheet(context, 'Thành Phố Yêu Thích', _buildFavoritesList()),
+                              child: _buildSettingTile(Icons.star_rounded, 'Thành Phố Yêu Thích', 'Quản lý'),
+                            ),
+                            Divider(height: 1, color: SettingsService.dividerColor),
+                            InkWell(
+                              onTap: () => _showBottomSheet(context, 'Lịch Sử Hoạt Động', _buildSearchHistory()),
+                              child: _buildSettingTile(Icons.history_rounded, 'Lịch Sử Hoạt Động', 'Xem'),
+                            ),
+                            Divider(height: 1, color: SettingsService.dividerColor),
+                            InkWell(
+                              onTap: () => _showBottomSheet(context, 'Nguồn Dữ Liệu', _buildDataSource()),
+                              child: _buildSettingTile(Icons.data_usage_rounded, 'Nguồn Dữ Liệu', 'Chi tiết', showBottomRadius: true),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 30),
 
-                  _sectionLabel('Công Nghệ Sử Dụng'),
-                  const SizedBox(height: 12),
-                  _buildTechStack(),
-                  const SizedBox(height: 30),
-
-                  _sectionLabel('Thành Phố Yêu Thích'),
-                  const SizedBox(height: 12),
-                  _buildFavoritesList(),
-                  const SizedBox(height: 24),
-
-                  _sectionLabel('Lịch Sử Hoạt Động ("Câu chuyện User")'),
-                  const SizedBox(height: 12),
-                  _buildSearchHistory(),
-                  const SizedBox(height: 24),
-
-                  _sectionLabel('Nguồn Dữ Liệu (Data Source)'),
-                  const SizedBox(height: 12),
-                  _buildDataSource(),
-                  const SizedBox(height: 30),
-
-                  _buildSettingsAndLogout(context),
-                  const SizedBox(height: 20),
-                ],
+                      _buildSettingsAndLogout(context),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
               ),
-            ),
+              _buildFooter(),
+            ],
           ),
-
-          // ── Footer ──────────────────────────────────────
-          _buildFooter(),
-        ],
-      ),
-    );
+        );
       },
+    );
+  }
+
+  void _showBottomSheet(BuildContext context, String title, Widget child) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: SettingsService.scaffoldBgColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: SettingsService.dividerColor, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 20),
+            Text(title, style: GoogleFonts.poppins(color: SettingsService.textColor, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            Expanded(child: SingleChildScrollView(physics: const BouncingScrollPhysics(), child: child)),
+          ],
+        ),
+      ),
     );
   }
 
   // ── Profile Card (Mới) ────────────────────────────────────
   Widget _buildProfileCard() {
-    final String userEmail = FirebaseAuth.instance.currentUser?.email ?? "Khách";
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return const SizedBox();
     
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+      builder: (context, snapshot) {
+        String displayName = user.email ?? "Khách";
+        String? avatarUrl;
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          displayName = data['username'] ?? displayName;
+          avatarUrl = data['avatarUrl'];
+        }
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          decoration: BoxDecoration(
+            color: SettingsService.cardColor,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: SettingsService.cardBorderColor),
+          ),
+          child: Row(
+            children: [
+              _buildAvatarWidget(avatarUrl, 64),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Hồ Sơ Cá Nhân',
+                        style: GoogleFonts.poppins(
+                            color: SettingsService.textMutedColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 4),
+                    Text(displayName,
+                        style: GoogleFonts.poppins(
+                            color: SettingsService.textColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    );
+  }
+
+  // ── Full Profile Details ─────────────────────────────────
+  Widget _buildProfileDetails() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return Center(child: Text("Chưa đăng nhập", style: GoogleFonts.poppins(color: SettingsService.textColor)));
+    }
+    
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return Center(child: Text("Không tìm thấy dữ liệu", style: GoogleFonts.poppins(color: SettingsService.textColor)));
+        }
+
+        final data = snapshot.data!.data() as Map<String, dynamic>;
+        final username = data['username'] ?? 'Không rõ';
+        final email = data['email'] ?? user.email ?? 'Không rõ';
+        final avatarUrl = data['avatarUrl'] as String?;
+        final createdAt = data['createdAt'] != null 
+            ? (data['createdAt'] as Timestamp).toDate().toString().split(' ')[0] 
+            : 'Không rõ';
+            
+        return Column(
+          children: [
+            Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                ValueListenableBuilder<bool>(
+                  valueListenable: _isUploadingAvatar,
+                  builder: (context, isUploading, _) {
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        _buildAvatarWidget(avatarUrl, 100),
+                        if (isUploading)
+                          const CircularProgressIndicator(color: Colors.white),
+                      ],
+                    );
+                  }
+                ),
+                GestureDetector(
+                  onTap: () => _pickAndUploadAvatar(context, user.uid),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFC427FB),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: SettingsService.cardColor, width: 3),
+                    ),
+                    child: const Icon(Icons.edit_rounded, color: Colors.white, size: 16),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _infoRow(
+              'Tên hiển thị', 
+              username,
+              onEdit: () {
+                _showEditUsernameDialog(context, user.uid, username);
+              }
+            ),
+            const SizedBox(height: 12),
+            _infoRow('Email', email),
+            const SizedBox(height: 12),
+            _infoRow('Ngày tham gia', createdAt),
+            const SizedBox(height: 12),
+            _infoRow('UID', user.uid, isMuted: true),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildAvatarWidget(String? avatarData, double size) {
+    ImageProvider? imageProvider;
+    if (avatarData != null && avatarData.isNotEmpty) {
+      if (avatarData.startsWith('http')) {
+        imageProvider = NetworkImage(avatarData);
+      } else {
+        try {
+          imageProvider = MemoryImage(base64Decode(avatarData));
+        } catch (e) {
+          imageProvider = null;
+        }
+      }
+    }
+
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: const Color(0xFFC427FB).withValues(alpha: 0.2),
+        shape: BoxShape.circle,
+        image: imageProvider != null ? DecorationImage(
+          image: imageProvider,
+          fit: BoxFit.cover,
+        ) : null,
+      ),
+      child: imageProvider == null 
+        ? Icon(Icons.person_rounded, color: SettingsService.accentTitleColor, size: size * 0.5)
+        : null,
+    );
+  }
+
+  Future<void> _pickAndUploadAvatar(BuildContext context, String uid) async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 300,
+        maxHeight: 300,
+        imageQuality: 80,
+      );
+      
+      if (image == null) return;
+
+      _isUploadingAvatar.value = true;
+      
+      // Đọc file thành bytes và mã hóa Base64 để lưu trực tiếp vào Firestore
+      // Cách này giúp bypass hoàn toàn lỗi CORS của Firebase Storage trên Web!
+      final bytes = await image.readAsBytes();
+      final base64String = base64Encode(bytes);
+      
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'avatarUrl': base64String,
+      });
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cập nhật ảnh đại diện thành công!')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi tải ảnh lên: $e')),
+        );
+      }
+    } finally {
+      _isUploadingAvatar.value = false;
+    }
+  }
+
+  void _showEditUsernameDialog(BuildContext context, String uid, String currentName) {
+    final TextEditingController controller = TextEditingController(text: currentName);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: SettingsService.cardColor,
+          title: Text('Đổi Tên Hiện Thị', style: GoogleFonts.poppins(color: SettingsService.textColor, fontSize: 16, fontWeight: FontWeight.bold)),
+          content: TextField(
+            controller: controller,
+            style: GoogleFonts.poppins(color: SettingsService.textColor),
+            decoration: InputDecoration(
+              hintText: 'Nhập tên mới',
+              hintStyle: GoogleFonts.poppins(color: SettingsService.textMutedColor),
+              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: SettingsService.textMutedColor)),
+              focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: const Color(0xFFC427FB))),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Hủy', style: GoogleFonts.poppins(color: SettingsService.textMutedColor)),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (controller.text.trim().isNotEmpty) {
+                  await FirebaseFirestore.instance.collection('users').doc(uid).update({
+                    'username': controller.text.trim()
+                  });
+                }
+                if (context.mounted) Navigator.pop(context);
+              },
+              child: Text('Lưu', style: GoogleFonts.poppins(color: const Color(0xFFC427FB), fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      }
+    );
+  }
+
+  Widget _infoRow(String label, String value, {bool isMuted = false, VoidCallback? onEdit}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: SettingsService.cardColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: SettingsService.cardBorderColor),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFC427FB).withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.person_rounded, color: SettingsService.accentTitleColor, size: 36),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Hồ Sơ Cá Nhân',
-                    style: GoogleFonts.poppins(
-                        color: SettingsService.textMutedColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500)),
-                const SizedBox(height: 4),
-                Text(userEmail,
-                    style: GoogleFonts.poppins(
-                        color: SettingsService.textColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700)),
-              ],
-            ),
+          Text(label, style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 13)),
+          Row(
+            children: [
+              Text(value, style: GoogleFonts.poppins(color: isMuted ? SettingsService.textDimColor : SettingsService.textColor, fontSize: 13, fontWeight: FontWeight.w600)),
+              if (onEdit != null) ...[
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: onEdit,
+                  child: Icon(Icons.edit_rounded, color: const Color(0xFFC427FB), size: 18),
+                ),
+              ]
+            ],
           ),
         ],
       ),
     );
   }
 
-  // ── App Info Card ─────────────────────────────────────────
-  Widget _buildAppInfoCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [SettingsService.primaryGradientStart, SettingsService.primaryGradientEnd],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: SettingsService.cardBorderColor),
-        boxShadow: [
-          BoxShadow(
-              color: SettingsService.primaryGradientStart.withValues(alpha: 0.4),
-              blurRadius: 16,
-              offset: const Offset(0, 6))
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: SettingsService.cardBorderColor,
-            ),
-            child: const Icon(Icons.cloud_done_rounded,
-                size: 48, color: Color(0xFFFFD700)),
-          ),
-          const SizedBox(height: 16),
-          Text('Weather App',
-              style: GoogleFonts.poppins(
-                  color: SettingsService.textColor,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text('Phiên bản 1.0.0',
-              style: GoogleFonts.poppins(
-                  color: SettingsService.accentTitleColor, fontSize: 13)),
-          const SizedBox(height: 16),
-          Text(
-            'Ứng dụng theo dõi thời tiết chính xác, nhanh chóng được xây dựng bởi Nhóm 1 - Đại học Phenikaa.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(color: SettingsService.textDimColor, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   // ── Team List ─────────────────────────────────────────────
   Widget _buildTeamList() {
@@ -434,19 +651,7 @@ class AboutScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              InkWell(
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Tính năng Đổi ngôn ngữ đang phát triển (v2.0)!', style: GoogleFonts.poppins()),
-                      backgroundColor: const Color(0xFFC427FB),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                },
-                child: _buildSettingTile(Icons.language_rounded, 'Đổi ngôn ngữ', 'Tiếng Việt', showTopRadius: true),
-              ),
-              Divider(height: 1, color: SettingsService.dividerColor),
+
               ValueListenableBuilder<bool>(
                 valueListenable: SettingsService.isLightMode,
                 builder: (context, isLight, _) {
@@ -454,7 +659,7 @@ class AboutScreen extends StatelessWidget {
                     onTap: () {
                       SettingsService.toggleLightMode();
                     },
-                    child: _buildSettingTile(Icons.dark_mode_rounded, 'Giao diện', isLight ? 'Sáng (Light)' : 'Tối (Dark)'),
+                    child: _buildSettingTile(Icons.dark_mode_rounded, 'Giao diện', isLight ? 'Sáng (Light)' : 'Tối (Dark)', showTopRadius: true),
                   );
                 },
               ),
@@ -476,19 +681,25 @@ class AboutScreen extends StatelessWidget {
               ),
               Divider(height: 1, color: SettingsService.dividerColor),
               // Nút Bật/tắt cảnh báo
-              ValueListenableBuilder<bool>(
-                valueListenable: SettingsService.isNotificationEnabled,
-                builder: (context, isEnabled, _) {
-                  return InkWell(
-                    onTap: () {
-                      SettingsService.toggleNotification();
-                    },
-                    child: _buildSettingTile(
-                        isEnabled ? Icons.notifications_active_rounded : Icons.notifications_off_rounded,
-                        'Cảnh báo thời tiết xấu',
-                        isEnabled ? 'Bật' : 'Tắt', showBottomRadius: true),
-                  );
+
+              // Nút Clear Cache
+              InkWell(
+                onTap: () async {
+                  await WeatherDataManager().loadAllData();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Đã xóa bộ nhớ đệm và tải lại dữ liệu thời tiết mới nhất!', style: GoogleFonts.poppins(color: Colors.white)),
+                        backgroundColor: Colors.green,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
                 },
+                child: _buildSettingTile(
+                    Icons.cleaning_services_rounded,
+                    'Làm mới dữ liệu',
+                    'Xóa Cache', showBottomRadius: true),
               ),
             ],
           ),

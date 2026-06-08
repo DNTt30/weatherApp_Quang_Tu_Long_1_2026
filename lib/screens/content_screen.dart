@@ -4,6 +4,7 @@ import '../models/forecast.dart';
 import '../models/weather.dart';
 import '../service/settings_service.dart';
 import '../service/weather_data_manager.dart';
+import '../service/firestore_service.dart';
 
 // ============================================================
 // ContentScreen — Long phụ trách
@@ -44,7 +45,8 @@ class ContentScreen extends StatelessWidget {
             valueListenable: SettingsService.isCelsius,
             builder: (context, isCelsius, _) {
               return Column(children: [
-            _buildHeader(),
+            _buildSearchBar(),
+            _buildRecentSearches(),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -91,38 +93,83 @@ class ContentScreen extends StatelessWidget {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────
-  Widget _buildHeader() {
+  // ── Search Bar ─────────────────────────────────────────────
+  Widget _buildSearchBar() {
     return Container(
-      width: double.infinity, height: 100,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [SettingsService.primaryGradientStart, SettingsService.primaryGradientEnd],
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
-        ),
-        boxShadow: [BoxShadow(color: const Color(0xFF3658B1).withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 4))],
-      ),
-      child: Stack(children: [
-        Positioned(right: -20, top: -20, child: Container(width: 100, height: 100,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: SettingsService.cardBorderColor))),
-        Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.photo_camera_rounded, color: SettingsService.textMutedColor, size: 18),
-            const SizedBox(width: 8),
-            Text('Ảnh Nhóm', style: GoogleFonts.poppins(color: SettingsService.textDimColor, fontSize: 13, fontWeight: FontWeight.w500)),
-          ]),
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-            decoration: BoxDecoration(
-              color: SettingsService.cardBorderColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text('Quang_Forecast', style: GoogleFonts.poppins(
-              color: SettingsService.textColor, fontSize: 11, fontWeight: FontWeight.w700)),
+      margin: const EdgeInsets.all(20),
+      child: TextField(
+        style: GoogleFonts.poppins(color: SettingsService.textColor),
+        decoration: InputDecoration(
+          hintText: 'Tìm kiếm thành phố...',
+          hintStyle: GoogleFonts.poppins(color: SettingsService.textMutedColor),
+          prefixIcon: Icon(Icons.search, color: SettingsService.textMutedColor),
+          filled: true,
+          fillColor: SettingsService.cardColor,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(color: SettingsService.cardBorderColor),
           ),
-        ])),
-      ]),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(color: SettingsService.cardBorderColor),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(color: Color(0xFFC427FB)),
+          ),
+        ),
+        onSubmitted: (value) {
+          if (value.trim().isNotEmpty) {
+            FirestoreService().saveSearchHistory(value.trim());
+            // In a real app, this would trigger a weather search.
+          }
+        },
+      ),
+    );
+  }
+
+  // ── Recent Searches ───────────────────────────────────────
+  Widget _buildRecentSearches() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: FirestoreService().getSearchHistory(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) return const SizedBox.shrink();
+        
+        final searches = snapshot.data!.take(5).toList();
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Recent Searches', style: GoogleFonts.poppins(color: SettingsService.textDimColor, fontSize: 13, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: searches.map((s) {
+                  return InkWell(
+                    onTap: () {
+                      // Trigger search
+                      FirestoreService().saveSearchHistory(s['cityName']);
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: SettingsService.cardBorderColor,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: SettingsService.cardColor),
+                      ),
+                      child: Text(s['cityName'], style: GoogleFonts.poppins(color: SettingsService.textColor, fontSize: 12)),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
     );
   }
 

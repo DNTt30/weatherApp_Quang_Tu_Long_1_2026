@@ -16,11 +16,11 @@ class FirestoreService {
   // 1. CRUD cho danh sách Thành Phố (cities collection)
   // ==========================================
 
-  // [C]reate: Thêm thành phố mới vào Firestore
-  Future<DocumentReference> addCity(Map<String, dynamic> cityData) async {
-    return await cities.add({
+  // [C]reate: Thêm hoặc cập nhật thành phố (tránh bị lặp random ID)
+  Future<void> saveCity(String cityName, Map<String, dynamic> cityData) async {
+    await cities.doc(cityName).set({
       ...cityData,
-      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
@@ -59,7 +59,7 @@ class FirestoreService {
   }
 
   // ==========================================
-  // 2. CRUD cho danh sách Yêu Thích của User (Sub-collection)
+  // 2. CRUD cho danh sách Yêu Thích của User (Trong bảng users)
   // ==========================================
 
   // [C]reate / [D]elete: Thêm hoặc Xóa thành phố yêu thích
@@ -67,19 +67,16 @@ class FirestoreService {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final docRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('favorites')
-        .doc(cityName);
+    final userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
 
     if (isFavorite) {
-      await docRef.set({
-        'name': cityName,
-        'addedAt': FieldValue.serverTimestamp(),
+      await userDoc.update({
+        'favoriteCities': FieldValue.arrayUnion([cityName]),
       });
     } else {
-      await docRef.delete();
+      await userDoc.update({
+        'favoriteCities': FieldValue.arrayRemove([cityName]),
+      });
     }
   }
 
@@ -88,13 +85,27 @@ class FirestoreService {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return [];
 
-    final querySnapshot = await FirebaseFirestore.instance
+    final docSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
-        .collection('favorites')
         .get();
 
-    return querySnapshot.docs.map((doc) => doc.id).toList();
+    if (docSnapshot.exists && docSnapshot.data()!.containsKey('favoriteCities')) {
+      List<dynamic> favorites = docSnapshot.data()!['favoriteCities'] ?? [];
+      return favorites.map((e) => e.toString()).toList();
+    }
+    return [];
+  }
+
+  // Update Settings
+  Future<void> updateUserSettings(bool isCelsius, bool isLightMode) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'temperatureUnit': isCelsius ? 'C' : 'F',
+      'darkMode': !isLightMode,
+    });
   }
 
   // ==========================================
