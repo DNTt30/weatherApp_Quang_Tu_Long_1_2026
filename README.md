@@ -456,31 +456,31 @@ flutter test
 
 ---
 
-## 🎨 Thiết kế UI (Purple Glassmorphism Theme)
+## 🎨 Thiết kế UI (Dynamic Light & Dark Glassmorphism)
 
-Ứng dụng sử dụng phong cách thiết kế **Glassmorphism** sang trọng với tông màu tím tối đặc trưng của Apple Weather, đem lại trải nghiệm thị giác hiện đại và mượt mà.
+Ứng dụng kết hợp linh hoạt giữa hai phong cách **Sáng (Light)** và **Tối (Dark)**, đi kèm hiệu ứng **Glassmorphism** đặc trưng:
+- **Giao diện Đăng Nhập (Dark Mode):** Sử dụng tông màu tím tối (Deep Purple) sang trọng, mang lại ấn tượng thị giác cực mạnh theo phong cách Apple Weather.
+- **Giao diện Trong App (Light/Dark Mode):** Hỗ trợ chuyển đổi linh hoạt. Chế độ sáng mang lại sự tươi mới, trong trẻo với các tông màu Pastel thân thiện (Home, Discover, Forecast, More).
 
 ### 📸 Hình ảnh giao diện thực tế (Screenshots)
 
 <p align="center">
-  <img src="screenshots/media__1779097361112.png" width="30%" alt="Màn hình Đăng Nhập / Đăng Ký"/>
-  <img src="screenshots/media__1779097784603.png" width="30%" alt="Màn hình chính - Home Screen"/>
-  <img src="screenshots/media__1779103349163.png" width="30%" alt="Màn hình dự báo chi tiết - Forecast Screen"/>
+  <img src="screenshots/media__1779097784603.png" width="19%" alt="Home Screen"/>
+  <img src="screenshots/discover.png" width="19%" alt="Discover Screen"/>
+  <img src="screenshots/media__1779103349163.png" width="19%" alt="Forecast Screen"/>
+  <img src="screenshots/media__1779097794838.png" width="19%" alt="More Screen"/>
+  <img src="screenshots/media__1779097361112.png" width="19%" alt="Đăng Nhập"/>
 </p>
 
-<p align="center">
-  <img src="screenshots/media__1779097794838.png" width="30%" alt="Màn hình About / More (Cài Đặt)"/>
-</p>
-
-### Bảng màu chủ đạo
-| Tên | Hex | Dùng cho |
-|-----|-----|---------|
-| Deep Purple (Gốc) | `#1F1D47` | Background đáy toàn màn hình |
-| Light Purple | `#2E335A` | Gradient nền trang trí |
-| Vivid Purple | `#48319D` | Nền Gradient của Main Card thời tiết |
-| Glass White | `rgba(255, 255, 255, 0.08)` | Các thẻ Card Glassmorphism |
-| Amber Accent | `#FFD700` | Icon ngôi sao vàng yêu thích, mặt trời |
-| Sky Blue Accent | `#83B4FF` | Chỉ báo tiến trình xác suất mưa |
+### Bảng màu chủ đạo (Theme Sáng & Tối)
+| Tên | Giao diện | Hex | Dùng cho |
+|-----|-----------|-----|---------|
+| Deep Purple | Dark | `#1F1D47` / `#2E335A` | Nền màn hình Đăng Nhập & Chế độ tối |
+| Vivid Purple | Dark | `#48319D` / `#C427FB` | Nút bấm, Gradient nổi bật |
+| Soft Blue | Light | `#E0E5FF` / `#F3F5FF` | Nền màn hình chính chế độ sáng |
+| Glass White | Light/Dark| `rgba(255, 255, 255, 0.6)`| Các thẻ Card Glassmorphism |
+| Amber/Yellow| Chung | `#FFD700` / `#FFB300` | Icon cảnh báo, nắng mặt trời |
+| Sky Blue | Chung | `#83B4FF` | Icon thời tiết, chỉ báo nước/mưa |
 
 ### Font chữ
 - **Poppins** — Font chính toàn ứng dụng để hiển thị các con số nhiệt độ và text (Google Fonts)
