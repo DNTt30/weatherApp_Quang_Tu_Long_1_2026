@@ -78,7 +78,12 @@ class AboutScreen extends StatelessWidget {
                             Divider(height: 1, color: SettingsService.dividerColor),
                             InkWell(
                               onTap: () => _showBottomSheet(context, 'Nguồn Dữ Liệu', _buildDataSource()),
-                              child: _buildSettingTile(Icons.data_usage_rounded, 'Nguồn Dữ Liệu', 'Chi tiết', showBottomRadius: true),
+                              child: _buildSettingTile(Icons.data_usage_rounded, 'Nguồn Dữ Liệu', 'Chi tiết'),
+                            ),
+                            Divider(height: 1, color: SettingsService.dividerColor),
+                            InkWell(
+                              onTap: () => _showFeedbackDialog(context),
+                              child: _buildSettingTile(Icons.feedback_rounded, 'Gửi Phản Hồi', 'Gửi ý kiến', showBottomRadius: true),
                             ),
                           ],
                         ),
@@ -895,6 +900,148 @@ class AboutScreen extends StatelessWidget {
               child: Text('Xóa Vĩnh Viễn', style: GoogleFonts.poppins(color: SettingsService.textColor, fontWeight: FontWeight.bold)),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  // ── Thêm Logic Gửi Phản Hồi ────────────────────────────────
+  void _showFeedbackDialog(BuildContext context) {
+    final TextEditingController feedbackCtrl = TextEditingController();
+    double currentRating = 5.0;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: SettingsService.cardColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              title: Row(
+                children: [
+                  const Icon(Icons.feedback_rounded, color: Color(0xFFC427FB)),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Gửi Phản Hồi',
+                    style: GoogleFonts.poppins(
+                      color: SettingsService.textColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Đánh giá của bạn:',
+                    style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      final starValue = index + 1.0;
+                      return GestureDetector(
+                        onTap: () {
+                          setDialogState(() {
+                            currentRating = starValue;
+                          });
+                        },
+                        child: Icon(
+                          Icons.star_rounded,
+                          color: starValue <= currentRating ? const Color(0xFFFFD700) : SettingsService.dividerColor,
+                          size: 32,
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Ý kiến đóng góp:',
+                    style: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: feedbackCtrl,
+                    maxLines: 4,
+                    style: GoogleFonts.poppins(color: SettingsService.textColor, fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'Nhập ý kiến phản hồi của bạn về ứng dụng...',
+                      hintStyle: GoogleFonts.poppins(color: SettingsService.textMutedColor, fontSize: 12),
+                      filled: true,
+                      fillColor: SettingsService.scaffoldBgColor.withValues(alpha: 0.5),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: SettingsService.cardBorderColor),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFFC427FB)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Hủy',
+                    style: GoogleFonts.poppins(color: SettingsService.textMutedColor),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFC427FB),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () async {
+                    final message = feedbackCtrl.text.trim();
+                    if (message.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Vui lòng nhập ý kiến phản hồi của bạn!')),
+                      );
+                      return;
+                    }
+
+                    // Đóng dialog trước
+                    Navigator.pop(context);
+
+                    try {
+                      final firestore = FirestoreService();
+                      await firestore.saveFeedback(message, currentRating);
+                      
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Cảm ơn bạn đã gửi ý kiến phản hồi đóng góp!',
+                              style: GoogleFonts.poppins(color: Colors.white),
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Không thể gửi phản hồi: $e')),
+                        );
+                      }
+                    }
+                  },
+                  child: Text(
+                    'Gửi',
+                    style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );

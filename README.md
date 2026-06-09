@@ -1,4 +1,4 @@
-# 🌤️ Weather App — Nhóm 1
+# 🌤️ Weather App — Nhóm Quang_Tú_Long
 ### Trường Đại học Phenikaa | Khoa Công nghệ Thông tin | Môn: Lập Trình Di Động
 
 ---
@@ -62,23 +62,32 @@ lib/
 ├── models/
 │   ├── weather.dart             # Class Weather (city, temp, status, humidity, isRaining)
 │   ├── forecast.dart            # Class Forecast (id, dateTime, min/maxTemp, rainProbability)
-│   └── city.dart                # Class City (id, name)
+│   ├── city.dart                # Class City (id, name)
+│   └── search_history.dart      # Class SearchHistory
 │
 ├── screens/
 │   ├── login_screen.dart        # Đăng nhập (US-02)
 │   ├── register_screen.dart     # Đăng ký (US-01)
 │   ├── home_screen.dart         # Thời tiết hiện tại (US-03,04,05,06,09) — Long
+│   ├── discover_screen.dart     # Khám phá thời tiết địa điểm du lịch (US-12)
 │   ├── content_screen.dart      # Dự báo chi tiết (US-07,08) — Quang
 │   └── about_screen.dart        # Giới thiệu nhóm (US-10) — Tú
 │
 ├── service/
 │   ├── auth_service.dart        # Firebase Auth wrapper (signIn, signUp, signOut)
-│   └── firestore_service.dart   # Firestore CRUD (addCity)
+│   ├── firestore_service.dart   # Firestore CRUD (addCity, favorite)
+│   ├── api_service.dart         # Open-Meteo API wrapper
+│   ├── settings_service.dart    # Quản lý cài đặt (đơn vị nhiệt độ, dark/light mode)
+│   └── weather_data_manager.dart# Quản lý state tập trung cho toàn app
 │
 └── widgets/
-    ├── bottom_nav_bar.dart      # Bottom Navigation Bar (3 tab)
+    ├── bottom_nav_bar.dart      # Bottom Navigation Bar (4 tab)
     ├── app_drawer.dart          # Side Drawer
-    └── shared_widgets.dart      # GroupPhotoHeader, MemberInfoFooter, AppConstants
+    ├── shared_widgets.dart      # GroupPhotoHeader, MemberInfoFooter, AppConstants
+    ├── city_card.dart           # Thẻ hiển thị thành phố
+    ├── custom_bottom_bar.dart   # Thanh bottom tùy chỉnh (nếu dùng)
+    ├── hourly_forecast_card.dart# Thẻ hiển thị thời tiết theo giờ
+    └── list_city.dart           # Danh sách các thành phố
 
 test/
 ├── widget_test.dart             # 25 Unit Tests (Model + Business Logic + Widget)
@@ -109,11 +118,8 @@ classDiagram
         +double windSpeed
         +int uvIndex
         +String icon
-        +Weather(city, temperature, status, humidity, isRaining, windSpeed, uvIndex, icon)
         +String formatTemperature(bool fahrenheit)
         +String? getWarning()
-        +String getUvLabel()
-        +String getWindLabel()
     }
 
     class Forecast {
@@ -122,9 +128,7 @@ classDiagram
         +double minTemp
         +double maxTemp
         +int rainProbability
-        +Forecast(id, dateTime, minTemp, maxTemp, rainProbability)
         +double getTemperatureDifference()
-        +double getAverageTemp()
     }
 
     class City {
@@ -133,14 +137,17 @@ classDiagram
         +double latitude
         +double longitude
         +bool isFavorite
-        +City(id, name, latitude, longitude, isFavorite)
         +void toggleFavorite()
-        +String getCityInfo()
+    }
+
+    class SearchHistory {
+        +String id
+        +String keyword
+        +DateTime timestamp
+        +SearchHistory.fromFirestore(doc)
     }
 
     class AuthService {
-        -FirebaseAuth _auth
-        -FirebaseFirestore _db
         +Stream~User?~ authStateChanges
         +User? currentUser
         +Future~UserCredential?~ signIn(email, password)
@@ -149,28 +156,42 @@ classDiagram
     }
 
     class FirestoreService {
-        +CollectionReference cities
-        +Future~DocumentReference~ addCity(cityData)
-        +Stream~QuerySnapshot~ getCitiesStream()
-        +Future~void~ updateCity(docId, updatedData)
-        +Future~void~ deleteCity(docId)
+        +Future~void~ saveCity(docId, cityData)
+        +Future~void~ saveWeather(docId, weatherData)
+        +Future~void~ saveForecast(docId, forecastData)
         +Future~void~ toggleFavoriteCity(cityName, isFavorite)
-        +Future~List~ getFavoriteCities()
+        +Future~List~ getSearchHistory()
+    }
+
+    class ApiService {
+        +Future~Map~ geocodeCity(cityName)
+        +Future~List~ geocodeSuggestions(query)
+        +Future~Map~ fetchWeatherData(lat, lon, cityName)
+    }
+
+    class WeatherDataManager {
+        +bool isLoading
+        +List~Map~ allCitiesData
+        +List~Map~ recommendedNearbyData
+        +ValueNotifier~String~ activeCityName
+        +Future~void~ loadAllData()
     }
 
     class SettingsService {
         +ValueNotifier~bool~ isCelsius
+        +ValueNotifier~bool~ isLightMode
         +void toggleTemperatureUnit()
     }
 
     AuthService --> User : quản lý
-    HomeScreen --> Weather : khởi tạo
-    HomeScreen --> Forecast : khởi tạo danh sách
-    HomeScreen --> City : khởi tạo danh sách
-    HomeScreen --> FirestoreService : gọi lưu Firestore
-    HomeScreen --> SettingsService : lắng nghe đổi đơn vị
-    ContentScreen --> Forecast : hiển thị
-    ContentScreen --> SettingsService : lắng nghe đổi đơn vị
+    WeatherDataManager --> ApiService : gọi API thời tiết
+    WeatherDataManager --> FirestoreService : gọi lưu DB
+    WeatherDataManager --> Weather : lưu trữ & phân phát
+    WeatherDataManager --> Forecast : lưu trữ & phân phát
+    HomeScreen --> WeatherDataManager : lấy dữ liệu
+    DiscoverScreen --> WeatherDataManager : hiển thị nearby
+    HomeScreen --> FirestoreService : gọi lưu yêu thích
+    ContentScreen --> Forecast : hiển thị chi tiết
 ```
 
 ### 2. Sơ đồ tuần tự (Sequence Diagrams)
@@ -251,12 +272,34 @@ sequenceDiagram
     HomeScreen->>HomeScreen: Cập nhật UI ngay lập tức (setState)
     HomeScreen->>FirestoreService: toggleFavoriteCity(cityName, isFavorite)
     alt isFavorite == true
-        FirestoreService->>Firestore: users/{uid}/favorites/{cityName}.set(...)
+        FirestoreService->>Firestore: users/{uid} update(favoriteCities: arrayUnion)
     else isFavorite == false
-        FirestoreService->>Firestore: users/{uid}/favorites/{cityName}.delete()
+        FirestoreService->>Firestore: users/{uid} update(favoriteCities: arrayRemove)
     end
     Firestore-->>FirestoreService: Xác nhận thành công
     FirestoreService-->>HomeScreen: Hoàn tất đồng bộ ngầm
+```
+
+#### 2.5 Luồng Fetch Dữ Liệu Thời Tiết Toàn Cục (API & Cache)
+```mermaid
+sequenceDiagram
+    participant MainShell
+    participant WeatherDataManager
+    participant ApiService
+    participant OpenMeteoAPI
+    participant FirestoreService
+
+    MainShell->>WeatherDataManager: loadAllData()
+    WeatherDataManager->>FirestoreService: getSearchHistory()
+    FirestoreService-->>WeatherDataManager: Lịch sử tìm kiếm gần nhất
+    loop Cho mỗi thành phố (Base + Nearby)
+        WeatherDataManager->>ApiService: fetchWeatherData(lat, lon, city)
+        ApiService->>OpenMeteoAPI: HTTP GET (current, daily, uv)
+        OpenMeteoAPI-->>ApiService: JSON Response
+        ApiService-->>WeatherDataManager: Map chứa Weather & Forecasts
+        WeatherDataManager->>FirestoreService: saveCity(), saveWeather(), saveForecast()
+    end
+    WeatherDataManager-->>MainShell: isLoading = false (Hoàn tất tải)
 ```
 
 ### 3. Sơ đồ hoạt động (Activity Diagrams)
@@ -274,7 +317,8 @@ flowchart TD
     F -- No --> H{snapshot.hasData và user != null?}
     H -- Yes --> I[Tự động vào MainShell]
     H -- No --> J[Hiển thị LoginScreen]
-    I --> K[Hiển thị HomeScreen Tab mặc định]
+    I --> L[Gọi WeatherDataManager.loadAllData]
+    L --> K[Hiển thị HomeScreen Tab mặc định]
 ```
 
 #### 3.2 Luồng Kiểm Tra và Cảnh Báo Điều Kiện Thời Tiết Xấu
@@ -302,37 +346,46 @@ flowchart TD
 
 ```
 Firestore (NoSQL Database):
-├── users/ (Collection lưu thông tin người dùng)
+├── users/ (Collection)
 │   └── {uid}:
-│       ├── uid: String
-│       ├── email: String
-│       ├── username: String
-│       └── createdAt: Timestamp
-│       └── favorites/ (Sub-collection lưu danh sách yêu thích)
-│           └── {cityName}:
-│               ├── name: String
-│               └── addedAt: Timestamp
-└── cities/ (Collection chung chứa danh sách thành phố)
+│       ├── uid, email, username, createdAt
+│       ├── favoriteCities: Array<String>
+│       ├── temperatureUnit: String
+│       ├── darkMode: Boolean
+│       └── history/ (Sub-collection)
+│           └── {auto-id}:
+│               ├── cityName, lat, lon
+│               └── timestamp
+├── cities/ (Collection)
+│   └── {cityName}:
+│       ├── name, country, latitude, longitude
+│       └── updatedAt
+├── weather/ (Collection)
+│   └── {cityName}:
+│       ├── temperature, status, humidity, windSpeed, uvIndex, icon, isRaining
+│       └── updatedAt
+├── forecasts/ (Collection)
+│   └── {cityName}:
+│       ├── data: Array<Map>
+│       └── updatedAt
+└── feedbacks/ (Collection)
     └── {auto-id}:
-        ├── name: String
-        ├── temperature: Number
-        ├── status: String
-        └── createdAt: Timestamp
+        └── userId, userEmail, username, message, rating, timestamp
 ```
 
 ### 5. Ma trận các thao tác CRUD với Firebase/Firestore
 
 | Thực thể (Collection) | Thao tác | Mô tả chi tiết trong dự án | Hàm xử lý & Vị trí code |
 |-----------------------|----------|----------------------------|------------------------|
-| **Tài khoản (users)** | **[C]reate** | Đăng ký tài khoản mới và lưu thông tin người dùng | `signUp()` trong [auth_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/auth_service.dart) |
-| | **[R]ead** | Lắng nghe trạng thái đăng nhập để tự động chuyển màn hình | `StreamBuilder` trong [main.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/main.dart) |
-| **Thành phố (cities)** | **[C]reate** | Thêm thành phố giả lập mới vào Firestore | `addCity()` trong [firestore_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/firestore_service.dart) |
-| | **[R]ead** | Truy vấn danh sách các thành phố đã thêm trên Cloud | `getCitiesStream()` trong [firestore_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/firestore_service.dart) |
-| | **[U]pdate** | Cập nhật thời tiết/thông tin của thành phố | `updateCity()` trong [firestore_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/firestore_service.dart) |
-| | **[D]elete** | Xóa thành phố khỏi danh sách quản lý | `deleteCity()` trong [firestore_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/firestore_service.dart) |
-| **Yêu thích (favorites)**| **[C]reate** | Thả tim để lưu trạng thái yêu thích thành phố | `toggleFavoriteCity(..., true)` trong [firestore_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/firestore_service.dart) |
-| | **[R]ead** | Tự động đồng bộ trạng thái sao vàng yêu thích khi mở app | `getFavoriteCities()` trong [firestore_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/firestore_service.dart) |
-| | **[D]elete** | Bỏ thả tim để hủy trạng thái yêu thích trên Cloud | `toggleFavoriteCity(..., false)` trong [firestore_service.dart](file:///d:/weatherApp_Quang_Tu_Long_1_2026/lib/service/firestore_service.dart) |
+| **Tài khoản (users)** | **[C]reate** | Đăng ký tài khoản mới và lưu thông tin người dùng | `signUp()` trong auth_service.dart |
+| | **[R]ead** | Lắng nghe trạng thái đăng nhập để tự động chuyển màn hình | `StreamBuilder` trong main.dart |
+| **Thành phố (cities)** | **[C]reate** | Thêm thành phố giả lập mới vào Firestore | `addCity()` trong firestore_service.dart |
+| | **[R]ead** | Truy vấn danh sách các thành phố đã thêm trên Cloud | `getCitiesStream()` trong firestore_service.dart |
+| | **[U]pdate** | Cập nhật thời tiết/thông tin của thành phố | `updateCity()` trong firestore_service.dart |
+| | **[D]elete** | Xóa thành phố khỏi danh sách quản lý | `deleteCity()` trong firestore_service.dart |
+| **Yêu thích (favorites)**| **[C]reate** | Thả tim để lưu trạng thái yêu thích thành phố | `toggleFavoriteCity(..., true)` trong firestore_service.dart |
+| | **[R]ead** | Tự động đồng bộ trạng thái sao vàng yêu thích khi mở app | `getFavoriteCities()` trong firestore_service.dart |
+| | **[D]elete** | Bỏ thả tim để hủy trạng thái yêu thích trên Cloud | `toggleFavoriteCity(..., false)` trong firestore_service.dart |
 
 ---
 
@@ -461,6 +514,7 @@ flutter test
 | US-09 | **Thêm thành phố** vào Firestore NoSQL |
 | US-10 | Xem **trang About** với thông tin nhóm & thành viên |
 | US-11 | **Đăng xuất** khỏi tài khoản |
+| US-12 | Khám phá **thời tiết địa điểm du lịch** (Discover) |
 
 ---
 
@@ -468,10 +522,11 @@ flutter test
 
 - [x] Đăng ký / Đăng nhập Firebase Auth
 - [x] Màn hình Home (Long) — Weather card, City selector, 5-day forecast
+- [x] Màn hình Discover — Agoda-inspired Travel/Weather mockup
 - [x] Màn hình Forecast (Quang) — Detailed cards, comparison table, stats
 - [x] Màn hình About (Tú) — Team info, personal intro
 - [x] Kết nối Firestore NoSQL (addCity)
-- [x] Bottom Navigation Bar (3 tab, IndexedStack)
+- [x] Bottom Navigation Bar (4 tab, IndexedStack)
 - [x] GroupPhotoHeader & MemberInfoFooter trên tất cả màn hình
 - [x] Tìm kiếm chính xác & Gợi ý Autocomplete (chuẩn hóa tiếng Việt NFD/NFC)
 - [x] 29 Unit Tests (flutter test)

@@ -145,4 +145,36 @@ class FirestoreService {
 
     return querySnapshot.docs.map((doc) => doc.data()).toList();
   }
+
+  // Gửi phản hồi (Feedback)
+  Future<void> saveFeedback(String message, double rating) async {
+    final user = FirebaseAuth.instance.currentUser;
+    String uid = 'guest';
+    String email = 'guest@example.com';
+    String username = 'Guest';
+
+    if (user != null) {
+      uid = user.uid;
+      email = user.email ?? '';
+      
+      // Lấy username từ Firestore
+      try {
+        final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        if (doc.exists) {
+          username = doc.data()?['username'] ?? user.email ?? 'User';
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    await FirebaseFirestore.instance.collection('feedbacks').add({
+      'userId': uid,
+      'userEmail': email,
+      'username': username,
+      'message': message,
+      'rating': rating,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
 }
