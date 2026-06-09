@@ -465,11 +465,11 @@ flutter test
 ### 📸 Hình ảnh giao diện thực tế (Screenshots)
 
 <p align="center">
-  <img src="screenshots/media__1779097784603.png" width="19%" alt="Home Screen"/>
+  <img src="screenshots/home.png" width="19%" alt="Home Screen"/>
   <img src="screenshots/discover.png" width="19%" alt="Discover Screen"/>
-  <img src="screenshots/media__1779103349163.png" width="19%" alt="Forecast Screen"/>
-  <img src="screenshots/media__1779097794838.png" width="19%" alt="More Screen"/>
-  <img src="screenshots/media__1779097361112.png" width="19%" alt="Đăng Nhập"/>
+  <img src="screenshots/forecast.png" width="19%" alt="Forecast Screen"/>
+  <img src="screenshots/more.png" width="19%" alt="More Screen"/>
+  <img src="screenshots/login.png" width="19%" alt="Đăng Nhập"/>
 </p>
 
 ### Bảng màu chủ đạo (Theme Sáng & Tối)
