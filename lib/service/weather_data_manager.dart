@@ -69,8 +69,6 @@ class WeatherDataManager {
 
   Future<void> loadAllData() async {
     isLoading = true;
-    allCitiesData.clear();
-    recommendedNearbyData.clear();
 
     final firestore = FirestoreService();
     List<Map<String, dynamic>> citiesToLoad = List.from(_baseCities);
@@ -102,6 +100,8 @@ class WeatherDataManager {
       // Bỏ qua lỗi nếu chưa có lịch sử
     }
 
+    List<Map<String, dynamic>> newAllCitiesData = [];
+
     // 1. Load weather cho baseCities
     for (var c in citiesToLoad) {
       try {
@@ -110,7 +110,7 @@ class WeatherDataManager {
         final Weather weather = data['weather'] as Weather;
         final List<Forecast> forecasts = data['forecasts'] as List<Forecast>;
 
-        allCitiesData.add({
+        newAllCitiesData.add({
           'city': c['city'],
           'lat': c['lat'],
           'lon': c['lon'],
@@ -158,7 +158,7 @@ class WeatherDataManager {
         final fallbackWeather = Weather(
           city: c['city'], temperature: 28.0, status: 'Sunny', humidity: 70, isRaining: false, icon: 'sunny'
         );
-        allCitiesData.add({
+        newAllCitiesData.add({
           'city': c['city'],
           'lat': c['lat'],
           'lon': c['lon'],
@@ -168,6 +168,7 @@ class WeatherDataManager {
       }
     }
 
+    List<Map<String, dynamic>> newRecommendedNearbyData = [];
     // 2. Tính toán và load weather cho các khu vực lân cận đề xuất
     List<Map<String, dynamic>> nearbyRegions = [];
     final double originLat = lastSearchCity != null ? lastSearchCity['lat'] : 21.0285; // Mặc định Hà Nội
@@ -198,7 +199,7 @@ class WeatherDataManager {
         final Weather weather = data['weather'] as Weather;
         final List<Forecast> forecasts = data['forecasts'] as List<Forecast>;
 
-        recommendedNearbyData.add({
+        newRecommendedNearbyData.add({
           'city': nr['city'],
           'lat': nr['lat'],
           'lon': nr['lon'],
@@ -211,7 +212,7 @@ class WeatherDataManager {
         final fallbackWeather = Weather(
           city: nr['city'], temperature: 28.0, status: 'Sunny', humidity: 70, isRaining: false, icon: 'sunny'
         );
-        recommendedNearbyData.add({
+        newRecommendedNearbyData.add({
           'city': nr['city'],
           'lat': nr['lat'],
           'lon': nr['lon'],
@@ -222,6 +223,8 @@ class WeatherDataManager {
       }
     }
 
+    allCitiesData = newAllCitiesData;
+    recommendedNearbyData = newRecommendedNearbyData;
     isLoading = false;
   }
 }

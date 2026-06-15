@@ -516,6 +516,10 @@ flutter test
 | US-10 | Xem **trang About** với thông tin nhóm & thành viên |
 | US-11 | **Đăng xuất** khỏi tài khoản |
 | US-12 | Khám phá **thời tiết địa điểm du lịch** (Discover) |
+| US-13 | **Thay đổi mật khẩu** tài khoản cá nhân |
+| US-14 | **Xóa tài khoản** vĩnh viễn |
+| US-15 | **Gửi phản hồi**, góp ý cho nhóm phát triển |
+| US-16 | **Cập nhật ảnh đại diện** (Avatar) cá nhân |
 
 ---
 

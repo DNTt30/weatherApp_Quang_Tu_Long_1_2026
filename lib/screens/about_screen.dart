@@ -7,6 +7,7 @@ import 'dart:convert';
 import '../service/settings_service.dart';
 import '../service/firestore_service.dart';
 import '../service/weather_data_manager.dart';
+import '../service/auth_service.dart';
 
 final ValueNotifier<bool> _isUploadingAvatar = ValueNotifier(false);
 
@@ -711,7 +712,7 @@ class AboutScreen extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         
-        // Nhóm Quản lý Tài khoản (Xóa, Đăng Xuất)
+        // Nhóm Quản lý Tài khoản (Thay Đổi Mật Khẩu, Xóa, Đăng Xuất)
         _sectionLabel('Quản Lý Tài Khoản'),
         const SizedBox(height: 12),
         Container(
@@ -722,10 +723,38 @@ class AboutScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
+              // Nút Thay Đổi Mật Khẩu
+              InkWell(
+                onTap: () => _showChangePasswordDialog(context),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.password_rounded,
+                            size: 18, color: Colors.blueAccent),
+                      ),
+                      const SizedBox(width: 14),
+                      Text('Thay Đổi Mật Khẩu',
+                          style: GoogleFonts.poppins(
+                              color: SettingsService.textColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ),
+              Divider(height: 1, color: SettingsService.dividerColor),
+
               // Nút Xóa Tài Khoản
               InkWell(
                 onTap: () => _showDeleteAccountDialog(context),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   child: Row(
@@ -854,6 +883,105 @@ class AboutScreen extends StatelessWidget {
           color: SettingsService.accentTitleColor,
           fontSize: 14,
           fontWeight: FontWeight.w700));
+
+  // ── Thêm Logic Thay Đổi Mật Khẩu ───────────────────────────
+  void _showChangePasswordDialog(BuildContext context) {
+    final currentPasswordCtrl = TextEditingController();
+    final newPasswordCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: SettingsService.bgGradientBottom,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Text(
+                'Thay Đổi Mật Khẩu',
+                style: GoogleFonts.poppins(color: SettingsService.textColor, fontWeight: FontWeight.bold),
+              ),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: currentPasswordCtrl,
+                      obscureText: true,
+                      style: GoogleFonts.poppins(color: SettingsService.textColor),
+                      decoration: InputDecoration(
+                        labelText: 'Mật khẩu hiện tại',
+                        labelStyle: GoogleFonts.poppins(color: SettingsService.textMutedColor),
+                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: SettingsService.dividerColor)),
+                      ),
+                      validator: (val) => (val == null || val.isEmpty) ? 'Vui lòng nhập mật khẩu hiện tại' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: newPasswordCtrl,
+                      obscureText: true,
+                      style: GoogleFonts.poppins(color: SettingsService.textColor),
+                      decoration: InputDecoration(
+                        labelText: 'Mật khẩu mới',
+                        labelStyle: GoogleFonts.poppins(color: SettingsService.textMutedColor),
+                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: SettingsService.dividerColor)),
+                      ),
+                      validator: (val) => (val == null || val.length < 6) ? 'Mật khẩu mới phải từ 6 ký tự' : null,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text('Hủy', style: GoogleFonts.poppins(color: SettingsService.textMutedColor)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: isLoading ? null : () async {
+                    if (formKey.currentState!.validate()) {
+                      setStateDialog(() => isLoading = true);
+                      try {
+                        await AuthService().changePassword(currentPasswordCtrl.text, newPasswordCtrl.text);
+                        if (ctx.mounted) {
+                          Navigator.of(ctx).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Đổi mật khẩu thành công!', style: GoogleFonts.poppins()),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        setStateDialog(() => isLoading = false);
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            SnackBar(
+                              content: Text('Lỗi: $e', style: GoogleFonts.poppins()),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                        }
+                      }
+                    }
+                  },
+                  child: isLoading
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : Text('Xác Nhận', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   // ── Thêm Logic Xóa Tài Khoản ──────────────────────────────
   void _showDeleteAccountDialog(BuildContext context) {

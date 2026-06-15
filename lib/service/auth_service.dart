@@ -47,4 +47,21 @@ class AuthService {
   Future<void> signOut() async {
     await _auth.signOut();
   }
+
+  // Change Password
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    final user = _auth.currentUser;
+    if (user != null && user.email != null) {
+      // Re-authenticate first
+      AuthCredential credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+      // Update to new password
+      await user.updatePassword(newPassword);
+    } else {
+      throw Exception('Không tìm thấy người dùng hiện tại');
+    }
+  }
 }
