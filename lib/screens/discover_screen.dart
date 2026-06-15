@@ -82,7 +82,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       const SizedBox(height: 22),
 
                       // ── NEARBY RECOMMENDATIONS SECTION ───────────────────────
-                      _buildNearbyRecommendationsSection(isLightMode, cardBgColor, textColor, textMutedColor, context),
+                      ValueListenableBuilder<bool>(
+                        valueListenable: WeatherDataManager.onDataUpdated,
+                        builder: (context, _, _) {
+                          return _buildNearbyRecommendationsSection(isLightMode, cardBgColor, textColor, textMutedColor, context);
+                        }
+                      ),
                       const SizedBox(height: 20),
                     ],
                   ),
@@ -741,7 +746,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          'Đề xuất thời tiết vùng gần vị trí tra cứu của bạn nhất. Nhấn để xem.',
+          'Đề xuất thời tiết vùng gần vị trí hiện tại của bạn nhất. Nhấn để xem.',
           style: GoogleFonts.poppins(
             fontSize: 10,
             color: textMutedColor,

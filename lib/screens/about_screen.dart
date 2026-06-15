@@ -8,6 +8,7 @@ import '../service/settings_service.dart';
 import '../service/firestore_service.dart';
 import '../service/weather_data_manager.dart';
 import '../service/auth_service.dart';
+import '../service/api_service.dart';
 
 final ValueNotifier<bool> _isUploadingAvatar = ValueNotifier(false);
 
@@ -249,6 +250,14 @@ class AboutScreen extends StatelessWidget {
               }
             ),
             const SizedBox(height: 12),
+            _infoRow(
+              'Địa chỉ', 
+              data['address'] ?? 'Chưa cập nhật',
+              onEdit: () {
+                _showEditAddressDialog(context, user.uid, data['address'] ?? 'Chưa cập nhật');
+              }
+            ),
+            const SizedBox(height: 12),
             _infoRow('Email', email),
             const SizedBox(height: 12),
             _infoRow('Ngày tham gia', createdAt),
@@ -367,6 +376,88 @@ class AboutScreen extends StatelessWidget {
           ],
         );
       }
+    );
+  }
+
+  void _showEditAddressDialog(BuildContext context, String uid, String currentAddress) {
+    final TextEditingController controller = TextEditingController(text: currentAddress == 'Chưa cập nhật' ? '' : currentAddress);
+    bool isSearching = false;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: SettingsService.cardColor,
+              title: Text('Cập Nhật Địa Chỉ', style: GoogleFonts.poppins(color: SettingsService.textColor, fontSize: 16, fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controller,
+                    style: GoogleFonts.poppins(color: SettingsService.textColor),
+                    decoration: InputDecoration(
+                      hintText: 'Nhập tên tỉnh/thành phố...',
+                      hintStyle: GoogleFonts.poppins(color: SettingsService.textMutedColor),
+                      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: SettingsService.textMutedColor)),
+                      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: const Color(0xFFC427FB))),
+                    ),
+                  ),
+                  if (isSearching)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 16.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSearching ? null : () => Navigator.pop(context),
+                  child: Text('Hủy', style: GoogleFonts.poppins(color: SettingsService.textMutedColor)),
+                ),
+                TextButton(
+                  onPressed: isSearching ? null : () async {
+                    final newAddress = controller.text.trim();
+                    if (newAddress.isNotEmpty) {
+                      setStateDialog(() => isSearching = true);
+                      
+                      final apiService = ApiService();
+                      final result = await apiService.geocodeCity(newAddress);
+                      
+                      if (result != null) {
+                        await FirebaseFirestore.instance.collection('users').doc(uid).update({
+                          'address': result['name'],
+                          'addressLat': result['lat'],
+                          'addressLon': result['lon'],
+                        });
+                        
+                        // Buộc tải lại dữ liệu thời tiết lân cận
+                        await WeatherDataManager().loadAllData();
+
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Cập nhật địa chỉ thành công!', style: GoogleFonts.poppins(color: Colors.white)), backgroundColor: Colors.green),
+                          );
+                        }
+                      } else {
+                        setStateDialog(() => isSearching = false);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Không tìm thấy thành phố này. Vui lòng thử lại!', style: GoogleFonts.poppins(color: Colors.white)), backgroundColor: Colors.redAccent),
+                          );
+                        }
+                      }
+                    }
+                  },
+                  child: Text('Lưu', style: GoogleFonts.poppins(color: const Color(0xFFC427FB), fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          }
+        );
+      },
     );
   }
 

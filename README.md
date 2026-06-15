@@ -520,6 +520,7 @@ flutter test
 | US-14 | **Xóa tài khoản** vĩnh viễn |
 | US-15 | **Gửi phản hồi**, góp ý cho nhóm phát triển |
 | US-16 | **Cập nhật ảnh đại diện** (Avatar) cá nhân |
+| US-17 | **Cập nhật địa chỉ** cá nhân để xem thời tiết khu vực lân cận chính xác |
 
 ---
 

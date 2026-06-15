@@ -47,7 +47,7 @@ class ApiService {
 
     // 1. Tìm kiếm trong danh sách 63 tỉnh/thành trước và phân loại độ ưu tiên
     final List<Map<String, dynamic>> localMatches = [];
-    for (var prov in _vietnamProvinces) {
+    for (var prov in vietnamProvinces) {
       final String provClean = _removeDiacritics(prov['name']!.toLowerCase());
       if (provClean.contains(queryClean)) {
         int rank = 2; // chứa từ khóa
@@ -180,7 +180,7 @@ class ApiService {
     return str;
   }
 
-  static const List<Map<String, dynamic>> _vietnamProvinces = [
+  static const List<Map<String, dynamic>> vietnamProvinces = [
     {'name': 'An Giang', 'lat': 10.3759, 'lon': 105.4325, 'admin1': 'Tỉnh'},
     {'name': 'Bà Rịa - Vũng Tàu', 'lat': 10.3460, 'lon': 107.0843, 'admin1': 'Tỉnh'},
     {'name': 'Bắc Giang', 'lat': 21.2731, 'lon': 106.1946, 'admin1': 'Tỉnh'},
