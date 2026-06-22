@@ -9,25 +9,41 @@ class ApiService {
 
   // Lấy dữ liệu tọa độ từ tên thành phố
   Future<Map<String, dynamic>?> geocodeCity(String cityName) async {
-    final url = Uri.parse('$_geocodingUrl?name=${Uri.encodeComponent(cityName)}&count=1&language=en&format=json');
+    // 1. Tìm trong danh sách 63 tỉnh/thành local trước (hỗ trợ cả có dấu lẫn không dấu)
+    final String queryClean = _removeDiacritics(cityName.trim().toLowerCase());
+    for (var prov in vietnamProvinces) {
+      final String provClean = _removeDiacritics(prov['name']!.toLowerCase());
+      if (provClean == queryClean) {
+        return {
+          'name': prov['name'],
+          'country': 'Vietnam',
+          'lat': prov['lat'],
+          'lon': prov['lon'],
+        };
+      }
+    }
+
+    // 2. Gọi API với query đã bỏ dấu (API không hỗ trợ tiếng Việt có dấu)
+    final String queryNoDiacritics = _removeDiacritics(cityName.trim());
+    final url = Uri.parse('$_geocodingUrl?name=${Uri.encodeComponent(queryNoDiacritics)}&count=5&language=en&format=json');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['results'] != null && data['results'].isNotEmpty) {
-          final result = data['results'][0];
-          final String country = result['country'] ?? '';
-          final String countryLower = country.toLowerCase();
-          
-          // Chỉ chấp nhận các tỉnh thành phố thuộc Việt Nam
-          if (countryLower.contains('vietnam') || countryLower.contains('việt nam') || countryLower.contains('viet nam')) {
-            final String name = _toNfc(result['name'] ?? '');
-            return {
-              'name': name,
-              'country': country,
-              'lat': result['latitude'],
-              'lon': result['longitude'],
-            };
+          for (var result in data['results']) {
+            final String country = result['country'] ?? '';
+            final String countryLower = country.toLowerCase();
+            // Chỉ chấp nhận các tỉnh thành phố thuộc Việt Nam
+            if (countryLower.contains('vietnam') || countryLower.contains('việt nam') || countryLower.contains('viet nam')) {
+              final String name = _toNfc(result['name'] ?? '');
+              return {
+                'name': name,
+                'country': country,
+                'lat': result['latitude'],
+                'lon': result['longitude'],
+              };
+            }
           }
         }
       }
@@ -78,7 +94,9 @@ class ApiService {
     }
 
     // 2. Gọi API để lấy thêm các kết quả chi tiết khác (quận, huyện, xã...)
-    final url = Uri.parse('$_geocodingUrl?name=${Uri.encodeComponent(queryTrimmed)}&count=10&language=en&format=json');
+    // Bỏ dấu tiếng Việt vì API geocoding không hỗ trợ unicode tiếng Việt
+    final String queryNoDiacritics = _removeDiacritics(queryTrimmed);
+    final url = Uri.parse('$_geocodingUrl?name=${Uri.encodeComponent(queryNoDiacritics)}&count=10&language=en&format=json');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -88,12 +106,12 @@ class ApiService {
             final String country = item['country'] ?? '';
             final String countryLower = country.toLowerCase();
             if (countryLower.contains('vietnam') || countryLower.contains('việt nam') || countryLower.contains('viet nam')) {
-              final String name = item['name'];
-              final String normalizedName = _toNfc(name).toLowerCase();
+              final String name = _toNfc(item['name'] ?? '');
+              final String normalizedName = _removeDiacritics(name.toLowerCase());
               
-              // Tránh trùng tên với các tỉnh đã add ở bước 1 (sau khi đưa về NFC chuẩn hóa)
+              // Tránh trùng tên với các tỉnh đã add ở bước 1
               final bool isDuplicate = results.any(
-                (element) => _toNfc(element['name'].toString()).toLowerCase() == normalizedName
+                (element) => _removeDiacritics(element['name'].toString().toLowerCase()) == normalizedName
               );
               
               if (!isDuplicate) {

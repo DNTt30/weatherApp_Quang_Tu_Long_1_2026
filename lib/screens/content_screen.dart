@@ -188,8 +188,8 @@ class _ContentScreenState extends State<ContentScreen> {
             final geocodeData = await apiService.geocodeCity(query);
             
             if (geocodeData != null) {
-              final double lat = geocodeData['lat'];
-              final double lon = geocodeData['lon'];
+              final double lat = (geocodeData['lat'] as num).toDouble();
+              final double lon = (geocodeData['lon'] as num).toDouble();
               final String cityName = geocodeData['name'];
               final String country = geocodeData['country'];
               
@@ -199,19 +199,21 @@ class _ContentScreenState extends State<ContentScreen> {
                 final Weather weather = weatherResult['weather'];
                 final List<Forecast> forecasts = weatherResult['forecasts'];
                 
-                final firestore = FirestoreService();
-                await firestore.saveCity(cityName, {
-                  'name': cityName,
-                  'country': country,
-                  'latitude': lat,
-                  'longitude': lon,
-                });
-                
-                await firestore.saveWeather(cityName, weather.toMap());
-                await firestore.saveForecast(cityName, forecasts.map((e) => e.toMap()).toList());
-                
-                // Ghi lại lịch sử có tọa độ để đề xuất lần sau
-                await firestore.saveSearchHistory(cityName, lat: lat, lon: lon);
+                // Lưu Firestore riêng — bỏ qua nếu lỗi permission
+                try {
+                  final firestore = FirestoreService();
+                  await firestore.saveCity(cityName, {
+                    'name': cityName,
+                    'country': country,
+                    'latitude': lat,
+                    'longitude': lon,
+                  });
+                  await firestore.saveWeather(cityName, weather.toMap());
+                  await firestore.saveForecast(cityName, forecasts.map((e) => e.toMap()).toList());
+                  await firestore.saveSearchHistory(cityName, lat: lat, lon: lon);
+                } catch (fsErr) {
+                  debugPrint('⚠️ Firestore save lỗi (bỏ qua): $fsErr');
+                }
                 
                 final dataManager = WeatherDataManager();
                 
@@ -227,13 +229,9 @@ class _ContentScreenState extends State<ContentScreen> {
                   'forecasts': forecasts,
                 });
 
-                // Cập nhật lân cận và đổi activeCityName
-                await dataManager.loadAllData();
                 WeatherDataManager.activeCityName.value = cityName;
                 _searchCtrl.clear();
-                setState(() {
-                  _suggestions = [];
-                });
+                if (mounted) setState(() { _suggestions = []; });
                 
                 // Tự động chuyển về trang chủ (Home Screen)
                 if (mounted) {
@@ -244,7 +242,12 @@ class _ContentScreenState extends State<ContentScreen> {
                 }
                 
               } catch (e) {
-                // handle error silently or show snackbar
+                debugPrint('🔴 Lỗi fetch thời tiết: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Đã có lỗi xảy ra khi lấy dữ liệu thời tiết')),
+                  );
+                }
               }
             } else {
               if (mounted) {
@@ -289,8 +292,8 @@ class _ContentScreenState extends State<ContentScreen> {
             ),
             onTap: () async {
               final String selectedName = suggestion['name'];
-              final double lat = suggestion['lat'];
-              final double lon = suggestion['lon'];
+              final double lat = (suggestion['lat'] as num).toDouble();
+              final double lon = (suggestion['lon'] as num).toDouble();
               
               setState(() {
                 _suggestions = [];
@@ -304,17 +307,20 @@ class _ContentScreenState extends State<ContentScreen> {
                 final Weather weather = weatherResult['weather'];
                 final List<Forecast> forecasts = weatherResult['forecasts'];
                 
-                final firestore = FirestoreService();
-                await firestore.saveCity(selectedName, {
-                  'name': selectedName,
-                  'country': 'Vietnam',
-                  'latitude': lat,
-                  'longitude': lon,
-                });
-                
-                await firestore.saveWeather(selectedName, weather.toMap());
-                await firestore.saveForecast(selectedName, forecasts.map((e) => e.toMap()).toList());
-                await firestore.saveSearchHistory(selectedName, lat: lat, lon: lon);
+                try {
+                  final firestore = FirestoreService();
+                  await firestore.saveCity(selectedName, {
+                    'name': selectedName,
+                    'country': 'Vietnam',
+                    'latitude': lat,
+                    'longitude': lon,
+                  });
+                  await firestore.saveWeather(selectedName, weather.toMap());
+                  await firestore.saveForecast(selectedName, forecasts.map((e) => e.toMap()).toList());
+                  await firestore.saveSearchHistory(selectedName, lat: lat, lon: lon);
+                } catch (fsErr) {
+                  debugPrint('⚠️ Firestore save lỗi (bỏ qua): $fsErr');
+                }
                 
                 final dataManager = WeatherDataManager();
                 dataManager.allCitiesData.removeWhere((element) => element['city'].toString().toLowerCase() == selectedName.toLowerCase());
@@ -326,7 +332,6 @@ class _ContentScreenState extends State<ContentScreen> {
                   'forecasts': forecasts,
                 });
                 
-                await dataManager.loadAllData();
                 WeatherDataManager.activeCityName.value = selectedName;
                 
                 // Auto navigate to Home tab
@@ -374,8 +379,8 @@ class _ContentScreenState extends State<ContentScreen> {
                   return InkWell(
                     onTap: () async {
                       final String cityName = s['cityName'];
-                      final double? lat = s['lat'];
-                      final double? lon = s['lon'];
+                      final double? lat = s['lat'] != null ? (s['lat'] as num).toDouble() : null;
+                      final double? lon = s['lon'] != null ? (s['lon'] as num).toDouble() : null;
                       
                       if (lat != null && lon != null) {
                         setState(() {
@@ -389,8 +394,12 @@ class _ContentScreenState extends State<ContentScreen> {
                           final Weather weather = weatherResult['weather'];
                           final List<Forecast> forecasts = weatherResult['forecasts'];
                           
-                          final firestore = FirestoreService();
-                          await firestore.saveSearchHistory(cityName, lat: lat, lon: lon);
+                          try {
+                            final firestore = FirestoreService();
+                            await firestore.saveSearchHistory(cityName, lat: lat, lon: lon);
+                          } catch (fsErr) {
+                            debugPrint('⚠️ Firestore save lỗi (bỏ qua): $fsErr');
+                          }
                           
                           final dataManager = WeatherDataManager();
                           
@@ -404,8 +413,6 @@ class _ContentScreenState extends State<ContentScreen> {
                             'forecasts': forecasts,
                           });
                           
-                          // Cập nhật các vùng lân cận
-                          await dataManager.loadAllData();
                           WeatherDataManager.activeCityName.value = cityName;
 
                           // Tự động chuyển về trang chủ (Home Screen)

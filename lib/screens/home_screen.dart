@@ -267,8 +267,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               final geocodeData = await apiService.geocodeCity(query);
               
               if (geocodeData != null) {
-                final double lat = geocodeData['lat'];
-                final double lon = geocodeData['lon'];
+                final double lat = (geocodeData['lat'] as num).toDouble();
+                final double lon = (geocodeData['lon'] as num).toDouble();
                 final String cityName = geocodeData['name'];
                 final String country = geocodeData['country'];
                 
@@ -276,20 +276,25 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 final Weather weather = weatherResult['weather'];
                 final List<Forecast> forecasts = weatherResult['forecasts'];
                 
-                final firestore = FirestoreService();
-                await firestore.saveCity(cityName, {
-                  'name': cityName,
-                  'country': country,
-                  'latitude': lat,
-                  'longitude': lon,
-                });
+                // Lưu Firestore riêng — bỏ qua nếu lỗi permission
+                try {
+                  final firestore = FirestoreService();
+                  await firestore.saveCity(cityName, {
+                    'name': cityName,
+                    'country': country,
+                    'latitude': lat,
+                    'longitude': lon,
+                  });
+                  await firestore.saveWeather(cityName, weather.toMap());
+                  await firestore.saveForecast(cityName, forecasts.map((e) => e.toMap()).toList());
+                  await firestore.saveSearchHistory(cityName, lat: lat, lon: lon);
+                } catch (fsErr) {
+                  debugPrint('⚠️ Firestore save lỗi (bỏ qua): $fsErr');
+                }
                 
-                await firestore.saveWeather(cityName, weather.toMap());
-                await firestore.saveForecast(cityName, forecasts.map((e) => e.toMap()).toList());
-                await firestore.saveSearchHistory(cityName, lat: lat, lon: lon);
-                
-                // Cập nhật bộ nhớ đệm
-                _dataManager.allCitiesData.removeWhere((element) => element['city'].toString().toLowerCase() == cityName.toLowerCase());
+                // Cập nhật bộ nhớ cache cục bộ ngay lập tức
+                _dataManager.allCitiesData.removeWhere(
+                  (element) => element['city'].toString().toLowerCase() == cityName.toLowerCase());
                 _dataManager.allCitiesData.insert(0, {
                   'city': cityName,
                   'lat': lat,
@@ -298,13 +303,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   'forecasts': forecasts,
                 });
                 
-                // Cập nhật các vùng lân cận và đổi activeCityName
-                await _dataManager.loadAllData();
                 WeatherDataManager.activeCityName.value = cityName;
                 _searchCtrl.clear();
-                setState(() {
-                  _suggestions = [];
-                });
+                if (mounted) {
+                  setState(() { _suggestions = []; });
+                }
               } else {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -312,10 +315,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   );
                 }
               }
-            } catch (e) {
+            } catch (e, stackTrace) {
+              debugPrint('🔴 LỖI TÌM KIẾM: $e');
+              debugPrint('📍 StackTrace: $stackTrace');
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Đã có lỗi xảy ra khi tìm kiếm')),
+                  SnackBar(content: Text('Lỗi: ${e.toString().substring(0, e.toString().length > 80 ? 80 : e.toString().length)}')),
                 );
               }
             } finally {
@@ -355,8 +360,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
             onTap: () async {
               final String selectedName = suggestion['name'];
-              final double lat = suggestion['lat'];
-              final double lon = suggestion['lon'];
+              final double lat = (suggestion['lat'] as num).toDouble();
+              final double lon = (suggestion['lon'] as num).toDouble();
               
               setState(() {
                 _suggestions = [];
@@ -370,17 +375,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 final Weather weather = weatherResult['weather'];
                 final List<Forecast> forecasts = weatherResult['forecasts'];
                 
-                final firestore = FirestoreService();
-                await firestore.saveCity(selectedName, {
-                  'name': selectedName,
-                  'country': 'Vietnam',
-                  'latitude': lat,
-                  'longitude': lon,
-                });
-                
-                await firestore.saveWeather(selectedName, weather.toMap());
-                await firestore.saveForecast(selectedName, forecasts.map((e) => e.toMap()).toList());
-                await firestore.saveSearchHistory(selectedName, lat: lat, lon: lon);
+                try {
+                  final firestore = FirestoreService();
+                  await firestore.saveCity(selectedName, {
+                    'name': selectedName,
+                    'country': 'Vietnam',
+                    'latitude': lat,
+                    'longitude': lon,
+                  });
+                  await firestore.saveWeather(selectedName, weather.toMap());
+                  await firestore.saveForecast(selectedName, forecasts.map((e) => e.toMap()).toList());
+                  await firestore.saveSearchHistory(selectedName, lat: lat, lon: lon);
+                } catch (fsErr) {
+                  debugPrint('⚠️ Firestore save lỗi (bỏ qua): $fsErr');
+                }
                 
                 _dataManager.allCitiesData.removeWhere((element) => element['city'].toString().toLowerCase() == selectedName.toLowerCase());
                 _dataManager.allCitiesData.insert(0, {
@@ -391,10 +399,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   'forecasts': forecasts,
                 });
                 
-                await _dataManager.loadAllData();
                 WeatherDataManager.activeCityName.value = selectedName;
               } catch (e) {
-                // error
+                debugPrint('🔴 Lỗi khi chọn gợi ý: $e');
               } finally {
                 if (mounted) {
                   setState(() {

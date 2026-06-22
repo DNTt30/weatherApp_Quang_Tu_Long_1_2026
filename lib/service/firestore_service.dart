@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class FirestoreService {
@@ -97,15 +98,38 @@ class FirestoreService {
     return [];
   }
 
+  // Đảm bảo user document luôn tồn tại trước khi cập nhật
+  Future<void> ensureUserDocumentExists(User user) async {
+    final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    try {
+      final docSnapshot = await docRef.get();
+      if (!docSnapshot.exists) {
+        await docRef.set({
+          'uid': user.uid,
+          'email': user.email ?? 'Unknown',
+          'username': user.displayName ?? 'Người dùng',
+          'createdAt': FieldValue.serverTimestamp(),
+          'favoriteCities': [],
+          'temperatureUnit': 'C',
+          'darkMode': true,
+        }, SetOptions(merge: true));
+      }
+    } catch (e) {
+      debugPrint('Error ensuring user doc exists: $e');
+    }
+  }
+
   // Update Settings
   Future<void> updateUserSettings(bool isCelsius, bool isLightMode) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+    await ensureUserDocumentExists(user);
+
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
       'temperatureUnit': isCelsius ? 'C' : 'F',
       'darkMode': !isLightMode,
-    });
+    }, SetOptions(merge: true));
   }
 
   // ==========================================

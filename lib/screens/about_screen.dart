@@ -197,17 +197,21 @@ class AboutScreen extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return Center(child: Text("Không tìm thấy dữ liệu", style: GoogleFonts.poppins(color: SettingsService.textColor)));
+        Map<String, dynamic> data = {};
+        if (snapshot.hasData && snapshot.data!.exists) {
+          data = snapshot.data!.data() as Map<String, dynamic>;
         }
 
-        final data = snapshot.data!.data() as Map<String, dynamic>;
-        final username = data['username'] ?? 'Không rõ';
-        final email = data['email'] ?? user.email ?? 'Không rõ';
-        final avatarUrl = data['avatarUrl'] as String?;
-        final createdAt = data['createdAt'] != null 
-            ? (data['createdAt'] as Timestamp).toDate().toString().split(' ')[0] 
-            : 'Không rõ';
+        final username = data['username'] ?? user.displayName ?? 'Người dùng';
+        final email = data['email'] ?? user.email ?? 'Không rõ email';
+        final avatarUrl = (data['avatarUrl'] as String?) ?? user.photoURL;
+        
+        String createdAt = 'Không rõ';
+        if (data['createdAt'] != null) {
+          createdAt = (data['createdAt'] as Timestamp).toDate().toString().split(' ')[0];
+        } else if (user.metadata.creationTime != null) {
+          createdAt = user.metadata.creationTime!.toString().split(' ')[0];
+        }
             
         return Column(
           children: [
@@ -319,9 +323,14 @@ class AboutScreen extends StatelessWidget {
       final bytes = await image.readAsBytes();
       final base64String = base64Encode(bytes);
       
-      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        await FirestoreService().ensureUserDocumentExists(currentUser);
+      }
+      
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'avatarUrl': base64String,
-      });
+      }, SetOptions(merge: true));
       
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -365,9 +374,13 @@ class AboutScreen extends StatelessWidget {
             TextButton(
               onPressed: () async {
                 if (controller.text.trim().isNotEmpty) {
-                  await FirebaseFirestore.instance.collection('users').doc(uid).update({
+                  final currentUser = FirebaseAuth.instance.currentUser;
+                  if (currentUser != null) {
+                    await FirestoreService().ensureUserDocumentExists(currentUser);
+                  }
+                  await FirebaseFirestore.instance.collection('users').doc(uid).set({
                     'username': controller.text.trim()
-                  });
+                  }, SetOptions(merge: true));
                 }
                 if (context.mounted) Navigator.pop(context);
               },
@@ -426,11 +439,15 @@ class AboutScreen extends StatelessWidget {
                       final result = await apiService.geocodeCity(newAddress);
                       
                       if (result != null) {
-                        await FirebaseFirestore.instance.collection('users').doc(uid).update({
+                        final currentUser = FirebaseAuth.instance.currentUser;
+                        if (currentUser != null) {
+                          await FirestoreService().ensureUserDocumentExists(currentUser);
+                        }
+                        await FirebaseFirestore.instance.collection('users').doc(uid).set({
                           'address': result['name'],
                           'addressLat': result['lat'],
                           'addressLon': result['lon'],
-                        });
+                        }, SetOptions(merge: true));
                         
                         // Buộc tải lại dữ liệu thời tiết lân cận
                         await WeatherDataManager().loadAllData();
